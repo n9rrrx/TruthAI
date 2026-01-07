@@ -270,8 +270,12 @@
                     <svg id="moon-icon" class="w-4 h-4 block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
                 </button>
 
-                <a href="#detector" id="get-started-button" class="hidden sm:block bg-slate-900 dark:bg-white text-white dark:text-black text-xs font-bold px-4 py-2.5 rounded-full hover:opacity-90 transition-opacity">
-                    Get Started
+                <a href="/login" class="hidden sm:block text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-brand-primary transition-colors">
+                    Sign In
+                </a>
+
+                <a href="/register" class="hidden sm:block bg-gradient-to-r from-brand-primary to-brand-accent text-white text-xs font-bold px-4 py-2.5 rounded-full hover:opacity-90 transition-opacity shadow-lg shadow-brand-primary/20">
+                    Sign Up Free
                 </a>
             </div>
         </nav>
