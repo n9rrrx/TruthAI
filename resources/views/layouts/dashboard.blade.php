@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en" class="dark scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@yield('title', 'Dashboard') | TruthAI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: {
+                            dark: '#01090D',
+                            darker: '#010608',
+                            card: '#021318',
+                            light: '#ECF6F9',
+                            primary: '#00C0C2',
+                            primaryGlow: '#00E0E3',
+                            accent: '#00AEB1',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        .sidebar-link {
+            transition: all 0.2s ease;
+        }
+        .sidebar-link:hover, .sidebar-link.active {
+            background: rgba(0, 192, 194, 0.1);
+            color: #00C0C2;
+        }
+        .sidebar-link.active {
+            border-left: 3px solid #00C0C2;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        .dark .glass-panel {
+            background: rgba(2, 19, 24, 0.6);
+            border: 1px solid rgba(0, 192, 194, 0.1);
+        }
+
+        .card {
+            background: white;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        .dark .card {
+            background: rgba(2, 19, 24, 0.8);
+            border: 1px solid rgba(0, 192, 194, 0.1);
+        }
+
+        body::-webkit-scrollbar { width: 8px; }
+        body::-webkit-scrollbar-track { background: #01090D; }
+        body::-webkit-scrollbar-thumb { background: #00C0C2; border-radius: 4px; }
+
+        .input-field {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        .input-field:focus {
+            border-color: #00C0C2;
+            box-shadow: 0 0 0 3px rgba(0, 192, 194, 0.1);
+        }
+        .dark .input-field {
+            background: rgba(1, 9, 13, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        .dark .input-field:focus {
+            border-color: #00C0C2;
+            box-shadow: 0 0 0 3px rgba(0, 192, 194, 0.2);
+        }
+        .dark .input-field::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+    </style>
+    @yield('styles')
+</head>
+<body class="antialiased bg-slate-100 dark:bg-brand-dark min-h-screen">
+
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside class="fixed left-0 top-0 h-full w-64 bg-white dark:bg-brand-darker border-r border-slate-200 dark:border-white/5 z-40 hidden lg:block">
+            <!-- Logo -->
+            <div class="p-6 border-b border-slate-200 dark:border-white/5">
+                <a href="/" class="flex items-center gap-2">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-primary to-brand-accent flex items-center justify-center text-white shadow-lg shadow-brand-primary/20">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <span class="font-bold text-lg text-slate-900 dark:text-white">TruthAI</span>
+                </a>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="p-4 space-y-1">
+                <a href="/dashboard" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 @if(request()->is('dashboard')) active @endif">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                    <span class="font-medium">Dashboard</span>
+                </a>
+                <a href="/dashboard/detector" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 @if(request()->is('dashboard/detector')) active @endif">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    <span class="font-medium">Detector</span>
+                </a>
+                <a href="/dashboard/humanizer" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 @if(request()->is('dashboard/humanizer')) active @endif">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                    <span class="font-medium">Humanizer</span>
+                </a>
+                <a href="/dashboard/history" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 @if(request()->is('dashboard/history')) active @endif">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span class="font-medium">History</span>
+                </a>
+
+                <div class="pt-4 mt-4 border-t border-slate-200 dark:border-white/5">
+                    <a href="/dashboard/settings" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 @if(request()->is('dashboard/settings')) active @endif">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        <span class="font-medium">Settings</span>
+                    </a>
+                </div>
+            </nav>
+
+            <!-- Usage Stats -->
+            <div class="absolute bottom-0 left-0 right-0 p-4">
+                <div class="card rounded-xl p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-slate-600 dark:text-slate-400">Scans Today</span>
+                        <span class="text-sm font-bold text-brand-primary">75/100</span>
+                    </div>
+                    <div class="w-full bg-slate-200 dark:bg-white/10 rounded-full h-2">
+                        <div class="bg-gradient-to-r from-brand-primary to-brand-accent h-2 rounded-full" style="width: 75%"></div>
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-500 mt-2">Upgrade for unlimited scans</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 lg:ml-64">
+            <!-- Top Bar -->
+            <header class="sticky top-0 z-30 bg-white/80 dark:bg-brand-dark/80 backdrop-blur-xl border-b border-slate-200 dark:border-white/5">
+                <div class="flex items-center justify-between px-6 py-4">
+                    <!-- Mobile Menu Button -->
+                    <button class="lg:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5">
+                        <svg class="w-6 h-6 text-slate-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    </button>
+
+                    <!-- Search -->
+                    <div class="hidden md:flex flex-1 max-w-md">
+                        <div class="relative w-full">
+                            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            <input type="text" placeholder="Search scans..." class="input-field w-full pl-10 pr-4 py-2.5 rounded-xl outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Right Actions -->
+                    <div class="flex items-center gap-4">
+                        <!-- Theme Toggle -->
+                        <button onclick="toggleTheme()" class="p-2.5 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors">
+                            <svg id="sun-icon" class="w-5 h-5 text-slate-600 dark:text-slate-300 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                            <svg id="moon-icon" class="w-5 h-5 text-slate-600 dark:text-slate-300 block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                        </button>
+
+                        <!-- Notifications -->
+                        <button class="relative p-2.5 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors">
+                            <svg class="w-5 h-5 text-slate-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                            <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-brand-primary rounded-full"></span>
+                        </button>
+
+                        <!-- Profile -->
+                        <div class="flex items-center gap-3 pl-4 border-l border-slate-200 dark:border-white/10">
+                            <div class="w-9 h-9 rounded-full bg-gradient-to-br from-brand-primary to-brand-accent flex items-center justify-center text-white font-bold">J</div>
+                            <div class="hidden md:block">
+                                <p class="text-sm font-semibold text-slate-900 dark:text-white">John Doe</p>
+                                <p class="text-xs text-slate-500">Pro Plan</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <main class="p-6">
+                @yield('content')
+            </main>
+        </div>
+    </div>
+
+    <script>
+        const html = document.documentElement;
+        const sunIcon = document.getElementById('sun-icon');
+        const moonIcon = document.getElementById('moon-icon');
+
+        function toggleTheme() {
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                sunIcon.classList.remove('hidden');
+                moonIcon.classList.add('hidden');
+                localStorage.setItem('theme', 'light');
+            } else {
+                html.classList.add('dark');
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        if (localStorage.getItem('theme') === 'light') {
+            html.classList.remove('dark');
+            sunIcon.classList.remove('hidden');
+            moonIcon.classList.add('hidden');
+        }
+    </script>
+    @yield('scripts')
+</body>
+</html>
