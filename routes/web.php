@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\SocialAuthController;
+use App\Http\Controllers\ScanController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -48,4 +49,10 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
     Route::get('/settings', function () {
         return view('dashboard.settings');
     })->name('dashboard.settings');
+
+    // Scan API Routes
+    Route::post('/scan', [ScanController::class, 'store'])->name('scan.store');
+    Route::get('/scan/{scan}', [ScanController::class, 'show'])->name('scan.show');
+    Route::delete('/scan/{scan}', [ScanController::class, 'destroy'])->name('scan.destroy');
+    Route::get('/providers', [ScanController::class, 'providers'])->name('scan.providers');
 });

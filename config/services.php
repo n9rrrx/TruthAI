@@ -41,4 +41,14 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI'),
     ],
 
+    // AI Detection APIs
+    'gptzero' => [
+        'api_key' => env('GPTZERO_API_KEY'),
+    ],
+
+    'copyleaks' => [
+        'email' => env('COPYLEAKS_EMAIL'),
+        'api_key' => env('COPYLEAKS_API_KEY'),
+    ],
+
 ];
