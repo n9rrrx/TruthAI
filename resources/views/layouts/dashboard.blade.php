@@ -229,12 +229,17 @@
             <!-- Usage Stats -->
             <div id="usage-card" class="absolute bottom-0 left-0 right-0 p-4">
                 <div class="card rounded-xl p-4">
+                    @php
+                        $todayScans = auth()->user()->today_scans_count;
+                        $dailyLimit = 100;
+                        $percentage = min(($todayScans / $dailyLimit) * 100, 100);
+                    @endphp
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-sm font-medium text-slate-600 dark:text-slate-400">Scans Today</span>
-                        <span class="text-sm font-bold text-brand-primary">75/100</span>
+                        <span class="text-sm font-bold text-brand-primary">{{ $todayScans }}/{{ $dailyLimit }}</span>
                     </div>
                     <div class="w-full bg-slate-200 dark:bg-white/10 rounded-full h-2">
-                        <div class="bg-gradient-to-r from-brand-primary to-brand-accent h-2 rounded-full" style="width: 75%"></div>
+                        <div class="bg-gradient-to-r from-brand-primary to-brand-accent h-2 rounded-full" style="width: {{ $percentage }}%"></div>
                     </div>
                     <p class="text-xs text-slate-500 dark:text-slate-500 mt-2">Upgrade for unlimited scans</p>
                 </div>

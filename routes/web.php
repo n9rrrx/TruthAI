@@ -41,7 +41,8 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
     })->name('dashboard.humanizer');
 
     Route::get('/history', function () {
-        return view('dashboard.history');
+        $scans = auth()->user()->scans()->latest()->paginate(15);
+        return view('dashboard.history', compact('scans'));
     })->name('dashboard.history');
 
     Route::get('/settings', function () {

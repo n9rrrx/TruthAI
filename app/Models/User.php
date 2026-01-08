@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -47,5 +48,29 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Get all scans for this user
+     */
+    public function scans(): HasMany
+    {
+        return $this->hasMany(Scan::class);
+    }
+
+    /**
+     * Get today's scan count
+     */
+    public function getTodayScansCountAttribute(): int
+    {
+        return $this->scans()->whereDate('created_at', today())->count();
+    }
+
+    /**
+     * Get total completed scans
+     */
+    public function getTotalScansAttribute(): int
+    {
+        return $this->scans()->completed()->count();
     }
 }
