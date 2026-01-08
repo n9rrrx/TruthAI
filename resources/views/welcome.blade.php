@@ -704,11 +704,6 @@
             canvas.height = window.innerHeight;
         });
 
-        document.getElementById('get-started-button').addEventListener('click', function(e) {
-            e.preventDefault();
-            document.getElementById('detector').scrollIntoView({ behavior: 'smooth' });
-        });
-
         // Typing Animation
         const typedTextElement = document.getElementById('typed-text');
         const textOptions = ['Artificial Content', 'AI-Generated Text', 'Deepfake Videos', 'Synthetic Images', 'Machine Writing'];
@@ -750,18 +745,24 @@
 
             statNumbers.forEach(stat => {
                 const target = parseFloat(stat.getAttribute('data-target'));
-                const suffix = stat.textContent.replace(/[0-9.]/g, '');
+                const text = stat.textContent;
+                // Extract suffix (everything after the first digit/decimal)
+                const suffixMatch = text.match(/[^0-9.].*$/);
+                const suffix = suffixMatch ? suffixMatch[0] : '';
                 const duration = 2000;
-                const increment = target / (duration / 16);
+                const steps = duration / 16;
+                const increment = target / steps;
                 let current = 0;
 
                 const updateCounter = () => {
                     current += increment;
                     if (current < target) {
-                        stat.textContent = (target < 10 ? current.toFixed(1) : Math.floor(current)) + suffix;
+                        const displayValue = target < 10 ? current.toFixed(1) : Math.floor(current);
+                        stat.textContent = displayValue + suffix;
                         requestAnimationFrame(updateCounter);
                     } else {
-                        stat.textContent = (target % 1 !== 0 ? target.toFixed(1) : target) + suffix;
+                        const finalValue = target % 1 !== 0 ? target.toFixed(1) : target;
+                        stat.textContent = finalValue + suffix;
                     }
                 };
 
