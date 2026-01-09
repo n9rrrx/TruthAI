@@ -51,4 +51,18 @@ return [
         'api_key' => env('COPYLEAKS_API_KEY'),
     ],
 
+    'sapling' => [
+        'api_key' => env('SAPLING_API_KEY'),
+    ],
+
+    'writer' => [
+        'api_key' => env('WRITER_API_KEY'),
+    ],
+
+    // AI Humanization
+    'groq' => [
+        'api_key' => env('GROQ_API_KEY'),
+    ],
+
 ];
+
