@@ -21,10 +21,20 @@ class ScanController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'content' => 'required|string|min:50|max:100000',
-            'type' => 'in:text,url',
-        ]);
+        $type = $request->input('type', 'text');
+        
+        // Different validation for URL vs text
+        if ($type === 'url') {
+            $request->validate([
+                'content' => 'required|url',
+                'type' => 'in:text,url',
+            ]);
+        } else {
+            $request->validate([
+                'content' => 'required|string|min:50',
+                'type' => 'in:text,url',
+            ]);
+        }
 
         $user = Auth::user();
         
@@ -37,12 +47,30 @@ class ScanController extends Controller
         }
 
         try {
+            $content = $request->input('content');
+            $title = null;
+            
+            // If URL type, fetch content from the URL
+            if ($type === 'url') {
+                $urlContent = $this->fetchUrlContent($content);
+                $title = $urlContent['title'] ?? parse_url($content, PHP_URL_HOST);
+                $content = $urlContent['content'];
+                
+                if (strlen($content) < 50) {
+                    return response()->json([
+                        'error' => 'Could not extract enough text from the URL. Please try a different page.',
+                    ], 422);
+                }
+            }
+
             // Create the scan
             $scan = Scan::create([
                 'user_id' => $user->id,
-                'type' => $request->input('type', 'text'),
-                'content' => $request->input('content'),
+                'type' => $type,
+                'content' => $content,
+                'title' => $title,
                 'status' => 'pending',
+                'metadata' => $type === 'url' ? ['source_url' => $request->input('content')] : null,
             ]);
 
             // Run detection
@@ -57,6 +85,7 @@ class ScanController extends Controller
                     'verdict' => $scan->verdict,
                     'word_count' => $scan->word_count,
                     'status' => $scan->status,
+                    'title' => $scan->title,
                     'results' => $scan->results->map(fn($r) => [
                         'provider' => $r->provider,
                         'provider_name' => $r->provider_name,
@@ -77,6 +106,62 @@ class ScanController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Fetch text content from a URL
+     */
+    private function fetchUrlContent(string $url): array
+    {
+        try {
+            $response = \Http::withHeaders([
+                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language' => 'en-US,en;q=0.5',
+            ])->timeout(20)->get($url);
+            
+            if (!$response->successful()) {
+                if ($response->status() === 403) {
+                    throw new \Exception('This website blocks automated access. Please copy and paste the article text directly instead.');
+                }
+                throw new \Exception('Website returned error: ' . $response->status());
+            }
+
+            $html = $response->body();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            throw new \Exception('Could not connect to the website. It may be blocking our request.');
+        }
+        
+        // Extract title
+        preg_match('/<title>(.*?)<\/title>/is', $html, $titleMatch);
+        $title = isset($titleMatch[1]) ? html_entity_decode(trim($titleMatch[1])) : null;
+        
+        // Remove script and style tags
+        $html = preg_replace('/<script[^>]*>.*?<\/script>/is', '', $html);
+        $html = preg_replace('/<style[^>]*>.*?<\/style>/is', '', $html);
+        
+        // Get text from body or article
+        if (preg_match('/<article[^>]*>(.*?)<\/article>/is', $html, $articleMatch)) {
+            $content = $articleMatch[1];
+        } elseif (preg_match('/<main[^>]*>(.*?)<\/main>/is', $html, $mainMatch)) {
+            $content = $mainMatch[1];
+        } elseif (preg_match('/<body[^>]*>(.*?)<\/body>/is', $html, $bodyMatch)) {
+            $content = $bodyMatch[1];
+        } else {
+            $content = $html;
+        }
+        
+        // Strip HTML tags and clean up
+        $content = strip_tags($content);
+        $content = html_entity_decode($content);
+        $content = preg_replace('/\s+/', ' ', $content);
+        $content = trim($content);
+        
+        return [
+            'title' => $title,
+            'content' => $content,
+        ];
+    }
+
 
     /**
      * Get scan details
