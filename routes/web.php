@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\ScanController;
+use App\Http\Controllers\HumanizerController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -55,4 +56,8 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
     Route::get('/scan/{scan}', [ScanController::class, 'show'])->name('scan.show');
     Route::delete('/scan/{scan}', [ScanController::class, 'destroy'])->name('scan.destroy');
     Route::get('/providers', [ScanController::class, 'providers'])->name('scan.providers');
+
+    // Humanizer API Routes
+    Route::post('/humanize', [HumanizerController::class, 'humanize'])->name('humanize');
+    Route::post('/humanize/regenerate', [HumanizerController::class, 'regenerate'])->name('humanize.regenerate');
 });

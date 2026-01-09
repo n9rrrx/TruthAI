@@ -188,9 +188,17 @@
             ? document.getElementById('content-input').value 
             : document.getElementById('url-input').value;
 
-        if (content.length < 50) {
-            showError('Please enter at least 50 characters for accurate detection.');
-            return;
+        // Different validation for URL vs text
+        if (currentType === 'url') {
+            if (!content || !content.match(/^https?:\/\/.+/)) {
+                showError('Please enter a valid URL (starting with http:// or https://)');
+                return;
+            }
+        } else {
+            if (content.length < 50) {
+                showError('Please enter at least 50 characters for accurate detection.');
+                return;
+            }
         }
 
         // Show loading state
