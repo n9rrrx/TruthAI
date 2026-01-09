@@ -24,6 +24,12 @@
                 URL
             </span>
         </button>
+        <button onclick="setDetectionType('image')" id="tab-image" class="detection-tab px-5 py-2.5 rounded-xl font-medium transition-all bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10">
+            <span class="flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                Image
+            </span>
+        </button>
     </div>
 
     <!-- Main Content -->
@@ -47,6 +53,22 @@
                     <div class="text-center">
                         <svg class="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
                         <p class="text-slate-400 dark:text-slate-500">URL content will be extracted</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Image Input -->
+            <div id="input-image" class="detection-input hidden">
+                <input type="url" id="image-url-input" class="input-field w-full p-4 rounded-xl outline-none mb-4" placeholder="Enter image URL (or upload below)">
+                <div id="image-dropzone" class="h-64 border-2 border-dashed border-slate-200 dark:border-white/10 rounded-xl flex items-center justify-center cursor-pointer hover:border-brand-primary transition-colors" onclick="document.getElementById('image-file-input').click()">
+                    <input type="file" id="image-file-input" class="hidden" accept="image/*" onchange="handleImageSelect(event)">
+                    <div id="image-placeholder" class="text-center">
+                        <svg class="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <p class="text-slate-400 dark:text-slate-500">Drop image here or click to upload</p>
+                        <p class="text-xs text-slate-400 mt-1">Supports JPG, PNG, WebP (max 10MB)</p>
+                    </div>
+                    <div id="image-preview" class="hidden">
+                        <img id="preview-img" class="max-h-56 rounded-lg" src="" alt="Preview">
                     </div>
                 </div>
             </div>
@@ -181,9 +203,26 @@
         document.getElementById('error-message').classList.add('hidden');
     }
 
+    let selectedImageFile = null;
+
+    function handleImageSelect(event) {
+        const file = event.target.files[0];
+        if (file) {
+            selectedImageFile = file;
+            document.getElementById('image-placeholder').classList.add('hidden');
+            document.getElementById('image-preview').classList.remove('hidden');
+            document.getElementById('preview-img').src = URL.createObjectURL(file);
+        }
+    }
+
     async function runDetection() {
         hideError();
         
+        // Handle image type separately
+        if (currentType === 'image') {
+            return runImageDetection();
+        }
+
         const content = currentType === 'text' 
             ? document.getElementById('content-input').value 
             : document.getElementById('url-input').value;
@@ -338,10 +377,86 @@
     function resetDetector() {
         document.getElementById('content-input').value = '';
         document.getElementById('url-input').value = '';
+        document.getElementById('image-url-input').value = '';
         document.getElementById('results-content').classList.add('hidden');
         document.getElementById('results-empty').classList.remove('hidden');
         document.getElementById('score-circle').style.strokeDashoffset = '440';
+        document.getElementById('image-placeholder').classList.remove('hidden');
+        document.getElementById('image-preview').classList.add('hidden');
+        selectedImageFile = null;
         updateCharCount();
+    }
+
+    async function runImageDetection() {
+        const imageUrl = document.getElementById('image-url-input').value;
+        
+        if (!selectedImageFile && !imageUrl) {
+            showError('Please upload an image or enter an image URL');
+            return;
+        }
+
+        // Show loading state
+        const btn = document.getElementById('scan-btn');
+        btn.disabled = true;
+        document.getElementById('scan-icon').classList.add('hidden');
+        document.getElementById('loading-icon').classList.remove('hidden');
+        document.getElementById('scan-text').textContent = 'Analyzing Image...';
+
+        try {
+            let response;
+            
+            if (selectedImageFile) {
+                // Upload file
+                const formData = new FormData();
+                formData.append('image', selectedImageFile);
+                
+                response = await fetch('/dashboard/analyze-image', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json',
+                    },
+                    body: formData,
+                });
+            } else {
+                // Use URL
+                response = await fetch('/dashboard/analyze-image', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ url: imageUrl }),
+                });
+            }
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Image analysis failed');
+            }
+
+            // Display results
+            displayResults({
+                ai_score: data.result.ai_score,
+                human_score: data.result.human_score,
+                word_count: 0,
+                results: [
+                    { provider: 'ai_generated', provider_name: 'AI Generated', ai_score: data.result.ai_generated_probability },
+                    { provider: 'deepfake', provider_name: 'Deepfake', ai_score: data.result.deepfake_probability },
+                ],
+            });
+
+        } catch (error) {
+            showError(error.message);
+        } finally {
+            // Reset button
+            btn.disabled = false;
+            document.getElementById('scan-icon').classList.remove('hidden');
+            document.getElementById('loading-icon').classList.add('hidden');
+            document.getElementById('scan-text').textContent = 'Analyze Content';
+        }
     }
 </script>
 @endsection
