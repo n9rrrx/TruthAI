@@ -112,36 +112,106 @@ class ScanController extends Controller
      */
     private function fetchUrlContent(string $url): array
     {
+        $html = null;
+        
+        // Try direct fetch first
         try {
             $response = \Http::withHeaders([
                 'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
                 'Accept-Language' => 'en-US,en;q=0.5',
-            ])->timeout(20)->get($url);
+                'Accept-Encoding' => 'gzip, deflate',
+                'Connection' => 'keep-alive',
+                'Upgrade-Insecure-Requests' => '1',
+                'Cache-Control' => 'max-age=0',
+            ])->timeout(15)->get($url);
             
-            if (!$response->successful()) {
-                if ($response->status() === 403) {
-                    throw new \Exception('This website blocks automated access. Please copy and paste the article text directly instead.');
-                }
-                throw new \Exception('Website returned error: ' . $response->status());
+            if ($response->successful()) {
+                $html = $response->body();
             }
+        } catch (\Exception $e) {
+            // Direct fetch failed, will try fallback
+        }
 
-            $html = $response->body();
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            throw new \Exception('Could not connect to the website. It may be blocking our request.');
+        // Fallback 1: Use webcache.googleusercontent.com (Google Cache)
+        if (!$html) {
+            try {
+                $cacheUrl = 'https://webcache.googleusercontent.com/search?q=cache:' . urlencode($url) . '&strip=1';
+                $response = \Http::withHeaders([
+                    'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                ])->timeout(15)->get($cacheUrl);
+                
+                if ($response->successful()) {
+                    $html = $response->body();
+                }
+            } catch (\Exception $e) {
+                // Google cache failed
+            }
+        }
+
+        // Fallback 2: Use api.allorigins.win
+        if (!$html) {
+            try {
+                $proxyUrl = 'https://api.allorigins.win/raw?url=' . urlencode($url);
+                $response = \Http::timeout(20)->get($proxyUrl);
+                
+                if ($response->successful()) {
+                    $html = $response->body();
+                }
+            } catch (\Exception $e) {
+                // Proxy failed
+            }
+        }
+
+        // Fallback 3: Use thingproxy
+        if (!$html) {
+            try {
+                $proxyUrl = 'https://thingproxy.freeboard.io/fetch/' . $url;
+                $response = \Http::timeout(20)->get($proxyUrl);
+                
+                if ($response->successful()) {
+                    $html = $response->body();
+                }
+            } catch (\Exception $e) {
+                // Proxy failed
+            }
+        }
+
+        // Fallback 4: Use corsproxy.io
+        if (!$html) {
+            try {
+                $proxyUrl = 'https://corsproxy.io/?' . urlencode($url);
+                $response = \Http::timeout(20)->get($proxyUrl);
+                
+                if ($response->successful()) {
+                    $html = $response->body();
+                }
+            } catch (\Exception $e) {
+                // All methods failed
+            }
+        }
+
+        if (!$html) {
+            throw new \Exception('Could not fetch URL content. The website has strong anti-bot protection. Please copy and paste the article text directly.');
         }
         
         // Extract title
         preg_match('/<title>(.*?)<\/title>/is', $html, $titleMatch);
         $title = isset($titleMatch[1]) ? html_entity_decode(trim($titleMatch[1])) : null;
         
-        // Remove script and style tags
+        // Remove script, style, nav, header, footer tags
         $html = preg_replace('/<script[^>]*>.*?<\/script>/is', '', $html);
         $html = preg_replace('/<style[^>]*>.*?<\/style>/is', '', $html);
+        $html = preg_replace('/<nav[^>]*>.*?<\/nav>/is', '', $html);
+        $html = preg_replace('/<header[^>]*>.*?<\/header>/is', '', $html);
+        $html = preg_replace('/<footer[^>]*>.*?<\/footer>/is', '', $html);
+        $html = preg_replace('/<aside[^>]*>.*?<\/aside>/is', '', $html);
         
-        // Get text from body or article
+        // Get text from article or main content
         if (preg_match('/<article[^>]*>(.*?)<\/article>/is', $html, $articleMatch)) {
             $content = $articleMatch[1];
+        } elseif (preg_match('/<div[^>]*class="[^"]*(?:article|content|post|entry)[^"]*"[^>]*>(.*?)<\/div>/is', $html, $contentMatch)) {
+            $content = $contentMatch[1];
         } elseif (preg_match('/<main[^>]*>(.*?)<\/main>/is', $html, $mainMatch)) {
             $content = $mainMatch[1];
         } elseif (preg_match('/<body[^>]*>(.*?)<\/body>/is', $html, $bodyMatch)) {

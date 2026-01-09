@@ -7,6 +7,8 @@ use App\Models\ScanResult;
 use App\Services\Detectors\DetectorInterface;
 use App\Services\Detectors\GPTZeroDetector;
 use App\Services\Detectors\CopyleaksDetector;
+use App\Services\Detectors\SaplingDetector;
+use App\Services\Detectors\WriterDetector;
 use App\Services\Detectors\MockDetector;
 use Illuminate\Support\Facades\Log;
 
@@ -16,8 +18,10 @@ class DetectorService
      * Configured detector weights for consensus
      */
     private array $weights = [
-        'gptzero' => 0.40,
-        'copyleaks' => 0.35,
+        'sapling' => 0.35,
+        'writer' => 0.30,
+        'gptzero' => 0.20,
+        'copyleaks' => 0.15,
         'mock' => 0.25,
     ];
 
@@ -27,6 +31,8 @@ class DetectorService
     public function getDetectors(): array
     {
         $detectors = [
+            new SaplingDetector(),
+            new WriterDetector(),
             new GPTZeroDetector(),
             new CopyleaksDetector(),
         ];
@@ -109,6 +115,16 @@ class DetectorService
     public function getProviderStatus(): array
     {
         return [
+            'sapling' => [
+                'name' => 'Sapling.ai',
+                'available' => (new SaplingDetector())->isAvailable(),
+                'weight' => $this->weights['sapling'],
+            ],
+            'writer' => [
+                'name' => 'Writer.com',
+                'available' => (new WriterDetector())->isAvailable(),
+                'weight' => $this->weights['writer'],
+            ],
             'gptzero' => [
                 'name' => 'GPTZero',
                 'available' => (new GPTZeroDetector())->isAvailable(),
@@ -127,3 +143,4 @@ class DetectorService
         ];
     }
 }
+

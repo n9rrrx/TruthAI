@@ -7,6 +7,13 @@ use Illuminate\Support\Facades\Log;
 
 class HumanizerService
 {
+    private ?GroqService $groqService = null;
+
+    public function __construct()
+    {
+        $this->groqService = new GroqService();
+    }
+
     /**
      * Humanization techniques by level
      */
@@ -92,12 +99,38 @@ class HumanizerService
     ];
 
     /**
-     * Humanize text based on level
+     * Humanize text based on level - uses AI when available
      */
     public function humanize(string $text, string $level = 'medium', string $style = 'academic'): array
     {
         $level = in_array($level, ['light', 'medium', 'strong']) ? $level : 'medium';
         
+        // Try Groq AI-powered humanization first
+        if ($this->groqService && $this->groqService->isAvailable()) {
+            try {
+                $humanizedText = $this->groqService->humanize($text, $level, $style);
+                return [
+                    'original' => $text,
+                    'humanized' => $humanizedText,
+                    'word_count' => str_word_count($humanizedText),
+                    'level' => $level,
+                    'style' => $style,
+                    'method' => 'ai',
+                ];
+            } catch (\Exception $e) {
+                Log::warning('Groq humanization failed, falling back to local', ['error' => $e->getMessage()]);
+            }
+        }
+        
+        // Fallback to local processing
+        return $this->humanizeLocal($text, $level, $style);
+    }
+
+    /**
+     * Local humanization (fallback when AI not available)
+     */
+    private function humanizeLocal(string $text, string $level, string $style): array
+    {
         $sentences = $this->splitIntoSentences($text);
         $humanizedSentences = [];
         
@@ -121,6 +154,7 @@ class HumanizerService
             'word_count' => str_word_count($humanizedText),
             'level' => $level,
             'style' => $style,
+            'method' => 'local',
         ];
     }
 
