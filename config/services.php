@@ -64,5 +64,10 @@ return [
         'api_key' => env('GROQ_API_KEY'),
     ],
 
-];
+    // Image/Video AI Detection
+    'sightengine' => [
+        'api_user' => env('SIGHTENGINE_API_USER'),
+        'api_secret' => env('SIGHTENGINE_API_SECRET'),
+    ],
 
+];

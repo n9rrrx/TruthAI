@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\ScanController;
 use App\Http\Controllers\HumanizerController;
+use App\Http\Controllers\ImageController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -60,4 +61,8 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
     // Humanizer API Routes
     Route::post('/humanize', [HumanizerController::class, 'humanize'])->name('humanize');
     Route::post('/humanize/regenerate', [HumanizerController::class, 'regenerate'])->name('humanize.regenerate');
+
+    // Image/Video Analysis Routes
+    Route::post('/analyze-image', [ImageController::class, 'analyze'])->name('analyze.image');
+    Route::post('/analyze-video', [ImageController::class, 'analyzeVideo'])->name('analyze.video');
 });
