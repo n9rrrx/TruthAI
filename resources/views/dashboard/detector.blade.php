@@ -30,6 +30,12 @@
                 Image
             </span>
         </button>
+        <button onclick="setDetectionType('video')" id="tab-video" class="detection-tab px-5 py-2.5 rounded-xl font-medium transition-all bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10">
+            <span class="flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                Video
+            </span>
+        </button>
     </div>
 
     <!-- Main Content -->
@@ -69,6 +75,23 @@
                     </div>
                     <div id="image-preview" class="hidden">
                         <img id="preview-img" class="max-h-56 rounded-lg" src="" alt="Preview">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video Input -->
+            <div id="input-video" class="detection-input hidden">
+                <input type="url" id="video-url-input" class="input-field w-full p-4 rounded-xl outline-none mb-4" placeholder="Enter video URL (or upload below)">
+                <div id="video-dropzone" class="h-64 border-2 border-dashed border-slate-200 dark:border-white/10 rounded-xl flex items-center justify-center cursor-pointer hover:border-brand-primary transition-colors" onclick="document.getElementById('video-file-input').click()">
+                    <input type="file" id="video-file-input" class="hidden" accept="video/*" onchange="handleVideoSelect(event)">
+                    <div id="video-placeholder" class="text-center">
+                        <svg class="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                        <p class="text-slate-400 dark:text-slate-500">Drop video here or click to upload</p>
+                        <p class="text-xs text-slate-400 mt-1">Supports MP4, AVI, MOV, WebM (max 100MB)</p>
+                    </div>
+                    <div id="video-preview" class="hidden text-center">
+                        <svg class="w-16 h-16 text-brand-primary mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <p id="video-name" class="text-slate-400 text-sm">video.mp4</p>
                     </div>
                 </div>
             </div>
@@ -215,12 +238,29 @@
         }
     }
 
+    let selectedVideoFile = null;
+
+    function handleVideoSelect(event) {
+        const file = event.target.files[0];
+        if (file) {
+            selectedVideoFile = file;
+            document.getElementById('video-placeholder').classList.add('hidden');
+            document.getElementById('video-preview').classList.remove('hidden');
+            document.getElementById('video-name').textContent = file.name;
+        }
+    }
+
     async function runDetection() {
         hideError();
         
         // Handle image type separately
         if (currentType === 'image') {
             return runImageDetection();
+        }
+        
+        // Handle video type separately
+        if (currentType === 'video') {
+            return runVideoDetection();
         }
 
         const content = currentType === 'text' 
@@ -378,12 +418,16 @@
         document.getElementById('content-input').value = '';
         document.getElementById('url-input').value = '';
         document.getElementById('image-url-input').value = '';
+        document.getElementById('video-url-input').value = '';
         document.getElementById('results-content').classList.add('hidden');
         document.getElementById('results-empty').classList.remove('hidden');
         document.getElementById('score-circle').style.strokeDashoffset = '440';
         document.getElementById('image-placeholder').classList.remove('hidden');
         document.getElementById('image-preview').classList.add('hidden');
+        document.getElementById('video-placeholder').classList.remove('hidden');
+        document.getElementById('video-preview').classList.add('hidden');
         selectedImageFile = null;
+        selectedVideoFile = null;
         updateCharCount();
     }
 
@@ -445,6 +489,79 @@
                 results: [
                     { provider: 'ai_generated', provider_name: 'AI Generated', ai_score: data.result.ai_generated_probability },
                     { provider: 'deepfake', provider_name: 'Deepfake', ai_score: data.result.deepfake_probability },
+                ],
+            });
+
+        } catch (error) {
+            showError(error.message);
+        } finally {
+            // Reset button
+            btn.disabled = false;
+            document.getElementById('scan-icon').classList.remove('hidden');
+            document.getElementById('loading-icon').classList.add('hidden');
+            document.getElementById('scan-text').textContent = 'Analyze Content';
+        }
+    }
+
+    async function runVideoDetection() {
+        const videoUrl = document.getElementById('video-url-input').value;
+        
+        if (!selectedVideoFile && !videoUrl) {
+            showError('Please upload a video or enter a video URL');
+            return;
+        }
+
+        // Show loading state
+        const btn = document.getElementById('scan-btn');
+        btn.disabled = true;
+        document.getElementById('scan-icon').classList.add('hidden');
+        document.getElementById('loading-icon').classList.remove('hidden');
+        document.getElementById('scan-text').textContent = 'Analyzing Video (extracting frames)...';
+
+        try {
+            let response;
+            
+            if (selectedVideoFile) {
+                // Upload file
+                const formData = new FormData();
+                formData.append('video', selectedVideoFile);
+                
+                response = await fetch('/dashboard/analyze-video', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json',
+                    },
+                    body: formData,
+                });
+            } else {
+                // Use URL
+                response = await fetch('/dashboard/analyze-video', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ url: videoUrl }),
+                });
+            }
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Video analysis failed');
+            }
+
+            // Display results
+            displayResults({
+                ai_score: data.result.ai_score,
+                human_score: data.result.human_score,
+                word_count: data.result.frames_analyzed,
+                results: [
+                    { provider: 'ai_generated', provider_name: 'AI Generated', ai_score: data.result.ai_generated_probability },
+                    { provider: 'deepfake', provider_name: 'Deepfake', ai_score: data.result.deepfake_probability },
+                    { provider: 'frames', provider_name: 'Frames Analyzed', ai_score: data.result.frames_analyzed },
                 ],
             });
 
