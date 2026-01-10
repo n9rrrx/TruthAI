@@ -205,12 +205,152 @@ class VideoDetectorService
     }
 
     /**
-     * Download video from URL
+     * Download video from URL (supports YouTube, TikTok, Instagram, etc.)
      */
     private function downloadVideo(string $url): string
     {
         $tempFile = $this->tempDir . '/video_' . uniqid() . '.mp4';
         
+        // Check if URL is from a platform that needs yt-dlp
+        if ($this->isPlatformUrl($url)) {
+            return $this->downloadWithYtDlp($url, $tempFile);
+        }
+        
+        // Direct download for regular URLs
+        return $this->downloadDirect($url, $tempFile);
+    }
+
+    /**
+     * Check if URL is from a platform that needs yt-dlp
+     */
+    private function isPlatformUrl(string $url): bool
+    {
+        $platforms = [
+            'youtube.com', 'youtu.be', 'youtube-nocookie.com',
+            'tiktok.com', 'vm.tiktok.com',
+            'instagram.com', 'instagr.am',
+            'facebook.com', 'fb.watch',
+            'twitter.com', 'x.com',
+            'vimeo.com',
+            'dailymotion.com',
+            'twitch.tv',
+        ];
+        
+        $host = parse_url($url, PHP_URL_HOST);
+        $host = preg_replace('/^www\./', '', $host ?? '');
+        
+        foreach ($platforms as $platform) {
+            if (strpos($host, $platform) !== false || $host === $platform) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * Download video using yt-dlp (for platform URLs)
+     */
+    private function downloadWithYtDlp(string $url, string $outputPath): string
+    {
+        // Find yt-dlp path
+        $ytDlpPath = $this->findYtDlpPath();
+        
+        if (!$ytDlpPath) {
+            throw new \Exception('yt-dlp is not installed. Cannot download videos from this platform.');
+        }
+
+        // Create unique prefix for finding the file later
+        $prefix = 'ytdlp_' . uniqid();
+        $outputTemplate = $this->tempDir . '/' . $prefix . '.%(ext)s';
+
+        // yt-dlp command: download best quality up to 720p
+        $command = sprintf(
+            '"%s" -f "bestvideo[height<=720]+bestaudio/best[height<=720]/best" --merge-output-format mp4 --no-playlist -o "%s" "%s" 2>&1',
+            $ytDlpPath,
+            str_replace('\\', '/', $outputTemplate),
+            $url
+        );
+
+        Log::info('Running yt-dlp', ['command' => $command]);
+        
+        exec($command, $output, $returnCode);
+        $outputStr = implode("\n", $output);
+        
+        Log::info('yt-dlp output', ['output' => $outputStr, 'returnCode' => $returnCode]);
+
+        if ($returnCode !== 0) {
+            Log::error('yt-dlp failed', ['output' => $outputStr]);
+            
+            if (strpos($outputStr, 'Video unavailable') !== false) {
+                throw new \Exception('Video is unavailable or private.');
+            }
+            if (strpos($outputStr, 'Sign in') !== false) {
+                throw new \Exception('Video requires login to access.');
+            }
+            
+            throw new \Exception('Failed to download video from platform. Error: ' . substr($outputStr, -200));
+        }
+
+        // Find the downloaded file (yt-dlp may have used a different extension)
+        $downloadedFiles = glob($this->tempDir . '/' . $prefix . '.*');
+        
+        if (empty($downloadedFiles)) {
+            throw new \Exception('Video download completed but no file was created.');
+        }
+
+        $downloadedFile = $downloadedFiles[0];
+        
+        if (filesize($downloadedFile) < 1000) {
+            @unlink($downloadedFile);
+            throw new \Exception('Downloaded video file is too small or invalid.');
+        }
+
+        return $downloadedFile;
+    }
+
+    /**
+     * Find yt-dlp executable path
+     */
+    private function findYtDlpPath(): ?string
+    {
+        // Check common paths
+        $possiblePaths = [
+            'yt-dlp',
+            getenv('LOCALAPPDATA') . '\\Microsoft\\WinGet\\Links\\yt-dlp.exe',
+        ];
+
+        // Check WinGet packages
+        $wingetBase = getenv('LOCALAPPDATA') . '\\Microsoft\\WinGet\\Packages';
+        if (is_dir($wingetBase)) {
+            $dirs = glob($wingetBase . '\\yt-dlp*', GLOB_ONLYDIR);
+            foreach ($dirs as $dir) {
+                $binPath = glob($dir . '\\yt-dlp*.exe');
+                if (!empty($binPath)) {
+                    return $binPath[0];
+                }
+            }
+        }
+
+        foreach ($possiblePaths as $path) {
+            if ($path === 'yt-dlp') {
+                exec('yt-dlp --version 2>&1', $output, $code);
+                if ($code === 0) {
+                    return 'yt-dlp';
+                }
+            } elseif (file_exists($path)) {
+                return $path;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Direct download for regular video URLs
+     */
+    private function downloadDirect(string $url, string $tempFile): string
+    {
         $ch = curl_init($url);
         $fp = fopen($tempFile, 'wb');
         
@@ -221,45 +361,34 @@ class VideoDetectorService
             CURLOPT_MAXREDIRS => 10,
             CURLOPT_SSL_VERIFYPEER => false,
             CURLOPT_SSL_VERIFYHOST => false,
-            CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
             CURLOPT_HTTPHEADER => [
                 'Accept: video/*,*/*',
                 'Accept-Language: en-US,en;q=0.9',
-                'Referer: ' . parse_url($url, PHP_URL_SCHEME) . '://' . parse_url($url, PHP_URL_HOST) . '/',
             ],
         ]);
         
         $success = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $error = curl_error($ch);
-        $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
         
         curl_close($ch);
         fclose($fp);
         
-        // Check if download failed
         if (!$success) {
             @unlink($tempFile);
-            Log::error('Video download failed', ['url' => $url, 'error' => $error]);
             throw new \Exception('Failed to download video: ' . ($error ?: 'Connection failed'));
         }
         
         if ($httpCode !== 200) {
             @unlink($tempFile);
-            if ($httpCode === 403) {
-                throw new \Exception('Video URL blocked access. Try a direct video file URL (not YouTube/TikTok).');
-            }
-            if ($httpCode === 404) {
-                throw new \Exception('Video not found at URL.');
-            }
             throw new \Exception('Failed to download video (HTTP ' . $httpCode . ')');
         }
         
-        // Check if we actually got a video
         $fileSize = filesize($tempFile);
         if ($fileSize < 1000) {
             @unlink($tempFile);
-            throw new \Exception('Video URL did not return a valid video file. Try a direct .mp4 link.');
+            throw new \Exception('Video URL did not return a valid video file.');
         }
         
         return $tempFile;
