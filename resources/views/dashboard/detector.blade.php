@@ -155,9 +155,9 @@
                     </div>
                 </div>
 
-                <!-- Word Count -->
-                <div class="flex items-center justify-between mb-4 text-sm">
-                    <span class="text-slate-500">Word Count</span>
+                <!-- Word Count / Frames Analyzed -->
+                <div id="count-section" class="flex items-center justify-between mb-4 text-sm">
+                    <span id="count-label" class="text-slate-500">Word Count</span>
                     <span id="word-count" class="font-semibold text-slate-900 dark:text-white">0</span>
                 </div>
 
@@ -361,16 +361,32 @@
             setVerdict('human', aiScore);
         }
 
-        // Show humanize button if AI detected
-        if (aiScore >= 40) {
-            document.getElementById('humanize-btn').classList.remove('hidden');
+        // Show humanize button only for text (not video/image)
+        const humanizeBtn = document.getElementById('humanize-btn');
+        if (aiScore >= 40 && currentType === 'text') {
+            humanizeBtn.classList.remove('hidden');
         } else {
-            document.getElementById('humanize-btn').classList.add('hidden');
+            humanizeBtn.classList.add('hidden');
+        }
+
+        // Update count label based on type
+        const countLabel = document.getElementById('count-label');
+        if (currentType === 'video') {
+            countLabel.textContent = 'Frames Analyzed';
+        } else if (currentType === 'image') {
+            countLabel.textContent = 'Image Analysis';
+            document.getElementById('word-count').textContent = '1';
+        } else {
+            countLabel.textContent = 'Word Count';
         }
 
         // Display provider results
         const providerDiv = document.getElementById('provider-results');
         providerDiv.innerHTML = scan.results.map(result => {
+            // Skip frames row for video (already shown above)
+            if (result.provider === 'frames') {
+                return '';
+            }
             const scoreColor = result.ai_score >= 70 ? 'text-red-500' : result.ai_score >= 40 ? 'text-yellow-500' : 'text-green-500';
             return `
                 <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-white/5 rounded-lg">
@@ -387,30 +403,33 @@
         const title = document.getElementById('verdict-title');
         const desc = document.getElementById('verdict-desc');
 
+        // Get appropriate text based on content type
+        const isMedia = currentType === 'video' || currentType === 'image';
+
         if (type === 'ai_generated') {
             box.className = 'rounded-xl p-4 mb-6 bg-red-500/10 border border-red-500/20';
             icon.className = 'w-10 h-10 rounded-full flex items-center justify-center bg-red-500/20';
             icon.innerHTML = '<svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>';
             title.className = 'font-bold text-red-600 dark:text-red-400';
-            title.textContent = 'Likely AI Generated';
+            title.textContent = isMedia ? 'Likely AI/Manipulated' : 'Likely AI Generated';
             desc.className = 'text-sm text-red-500/80';
-            desc.textContent = 'High probability of AI-written content';
+            desc.textContent = isMedia ? 'High probability of AI-generated or manipulated content' : 'High probability of AI-written content';
         } else if (type === 'mixed') {
             box.className = 'rounded-xl p-4 mb-6 bg-yellow-500/10 border border-yellow-500/20';
             icon.className = 'w-10 h-10 rounded-full flex items-center justify-center bg-yellow-500/20';
             icon.innerHTML = '<svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
             title.className = 'font-bold text-yellow-600 dark:text-yellow-400';
-            title.textContent = 'Mixed Content';
+            title.textContent = isMedia ? 'Possibly Edited' : 'Mixed Content';
             desc.className = 'text-sm text-yellow-500/80';
-            desc.textContent = 'Contains both AI and human-written elements';
+            desc.textContent = isMedia ? 'May contain edited or enhanced elements' : 'Contains both AI and human-written elements';
         } else {
             box.className = 'rounded-xl p-4 mb-6 bg-green-500/10 border border-green-500/20';
             icon.className = 'w-10 h-10 rounded-full flex items-center justify-center bg-green-500/20';
             icon.innerHTML = '<svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
             title.className = 'font-bold text-green-600 dark:text-green-400';
-            title.textContent = 'Likely Human Written';
+            title.textContent = isMedia ? 'Likely Authentic' : 'Likely Human Written';
             desc.className = 'text-sm text-green-500/80';
-            desc.textContent = 'Content appears to be written by a human';
+            desc.textContent = isMedia ? 'Content appears to be authentic' : 'Content appears to be written by a human';
         }
     }
 
