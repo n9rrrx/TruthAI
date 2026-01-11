@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\ScanController;
 use App\Http\Controllers\HumanizerController;
 use App\Http\Controllers\ImageController;
+use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -31,9 +32,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 
 // Dashboard Routes (Auth only)
 Route::prefix('dashboard')->middleware('auth')->group(function () {
-    Route::get('/', function () {
-        return view('dashboard.index');
-    })->name('dashboard');
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/detector', function () {
         return view('dashboard.detector');
