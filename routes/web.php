@@ -6,6 +6,7 @@ use App\Http\Controllers\ScanController;
 use App\Http\Controllers\HumanizerController;
 use App\Http\Controllers\ImageController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\SettingsController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -47,9 +48,12 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
         return view('dashboard.history', compact('scans'));
     })->name('dashboard.history');
 
-    Route::get('/settings', function () {
-        return view('dashboard.settings');
-    })->name('dashboard.settings');
+    // Settings Routes
+    Route::get('/settings', [SettingsController::class, 'index'])->name('dashboard.settings');
+    Route::post('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile');
+    Route::post('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password');
+    Route::delete('/settings/data', [SettingsController::class, 'deleteData'])->name('settings.delete-data');
+    Route::delete('/settings/account', [SettingsController::class, 'deleteAccount'])->name('settings.delete-account');
 
     // Scan API Routes
     Route::post('/scan', [ScanController::class, 'store'])->name('scan.store');
