@@ -64,6 +64,8 @@ class ScanController extends Controller
             }
 
             // Create the scan
+            \Log::info('Creating scan', ['user' => $user->id, 'type' => $type, 'content_length' => strlen($content)]);
+            
             $scan = Scan::create([
                 'user_id' => $user->id,
                 'type' => $type,
@@ -73,8 +75,12 @@ class ScanController extends Controller
                 'metadata' => $type === 'url' ? ['source_url' => $request->input('content')] : null,
             ]);
 
+            \Log::info('Scan created, running detection', ['scan_id' => $scan->id]);
+
             // Run detection
             $scan = $this->detectorService->detect($scan);
+
+            \Log::info('Detection complete', ['scan_id' => $scan->id, 'ai_score' => $scan->ai_score]);
 
             return response()->json([
                 'success' => true,
@@ -289,5 +295,27 @@ class ScanController extends Controller
         return response()->json([
             'providers' => $this->detectorService->getProviderStatus(),
         ]);
+    }
+
+    /**
+     * Export scan as PDF report
+     */
+    public function exportPdf(Scan $scan)
+    {
+        // Ensure user owns this scan
+        if ($scan->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        // Load relationships
+        $scan->load('results');
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.scan-report', [
+            'scan' => $scan,
+        ]);
+
+        $filename = 'truthai-report-' . $scan->id . '-' . now()->format('Y-m-d') . '.pdf';
+
+        return $pdf->download($filename);
     }
 }
