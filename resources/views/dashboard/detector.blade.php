@@ -170,13 +170,19 @@
                 </div>
 
                 <!-- Actions -->
-                <div class="flex gap-3">
-                    <a href="/dashboard/humanizer" id="humanize-btn" class="flex-1 bg-brand-primary text-white font-semibold py-3 rounded-xl text-center hover:bg-brand-primary/90 transition-colors hidden">
-                        Humanize Text
+                <div class="flex flex-col gap-3">
+                    <div class="flex gap-3">
+                        <a href="/dashboard/humanizer" id="humanize-btn" class="flex-1 bg-brand-primary text-white font-semibold py-3 rounded-xl text-center hover:bg-brand-primary/90 transition-colors hidden">
+                            Humanize Text
+                        </a>
+                        <button onclick="resetDetector()" class="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                            Scan Again
+                        </button>
+                    </div>
+                    <a href="#" id="download-pdf-btn" onclick="downloadPdf()" class="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors hidden">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        Download PDF Report
                     </a>
-                    <button onclick="resetDetector()" class="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-                        Scan Again
-                    </button>
                 </div>
             </div>
         </div>
@@ -187,6 +193,7 @@
 @section('scripts')
 <script>
     let currentType = 'text';
+    let currentScanId = null;
 
     function setDetectionType(type) {
         currentType = type;
@@ -395,6 +402,16 @@
                 </div>
             `;
         }).join('');
+
+        // Store scan ID and show download button
+        currentScanId = scan.id;
+        document.getElementById('download-pdf-btn').classList.remove('hidden');
+    }
+
+    function downloadPdf() {
+        if (currentScanId) {
+            window.location.href = '/dashboard/scan/' + currentScanId + '/export-pdf';
+        }
     }
 
     function setVerdict(type, score) {
