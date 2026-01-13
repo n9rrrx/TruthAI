@@ -18,12 +18,6 @@
                 Text
             </span>
         </button>
-        <button onclick="setDetectionType('url')" id="tab-url" class="detection-tab px-5 py-2.5 rounded-xl font-medium transition-all bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10">
-            <span class="flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
-                URL
-            </span>
-        </button>
         <button onclick="setDetectionType('image')" id="tab-image" class="detection-tab px-5 py-2.5 rounded-xl font-medium transition-all bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10">
             <span class="flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
@@ -52,21 +46,9 @@
                 <textarea id="content-input" class="input-field w-full h-80 p-4 rounded-xl resize-none outline-none" placeholder="Paste your text here to analyze for AI-generated content... (minimum 50 characters)" oninput="updateCharCount()"></textarea>
             </div>
 
-            <!-- URL Input -->
-            <div id="input-url" class="detection-input hidden">
-                <input type="url" id="url-input" class="input-field w-full p-4 rounded-xl outline-none mb-4" placeholder="Enter URL to analyze (e.g., https://example.com/article)">
-                <div class="h-64 border-2 border-dashed border-slate-200 dark:border-white/10 rounded-xl flex items-center justify-center">
-                    <div class="text-center">
-                        <svg class="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
-                        <p class="text-slate-400 dark:text-slate-500">URL content will be extracted</p>
-                    </div>
-                </div>
-            </div>
-
             <!-- Image Input -->
             <div id="input-image" class="detection-input hidden">
-                <input type="url" id="image-url-input" class="input-field w-full p-4 rounded-xl outline-none mb-4" placeholder="Enter image URL (or upload below)">
-                <div id="image-dropzone" class="h-64 border-2 border-dashed border-slate-200 dark:border-white/10 rounded-xl flex items-center justify-center cursor-pointer hover:border-brand-primary transition-colors" onclick="document.getElementById('image-file-input').click()">
+                <div id="image-dropzone" class="h-80 border-2 border-dashed border-slate-200 dark:border-white/10 rounded-xl flex items-center justify-center cursor-pointer hover:border-brand-primary transition-colors" onclick="document.getElementById('image-file-input').click()">
                     <input type="file" id="image-file-input" class="hidden" accept="image/*" onchange="handleImageSelect(event)">
                     <div id="image-placeholder" class="text-center">
                         <svg class="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>

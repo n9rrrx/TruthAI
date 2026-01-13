@@ -21,20 +21,10 @@ class ScanController extends Controller
      */
     public function store(Request $request)
     {
-        $type = $request->input('type', 'text');
-        
-        // Different validation for URL vs text
-        if ($type === 'url') {
-            $request->validate([
-                'content' => 'required|url',
-                'type' => 'in:text,url',
-            ]);
-        } else {
-            $request->validate([
-                'content' => 'required|string|min:50',
-                'type' => 'in:text,url',
-            ]);
-        }
+        $request->validate([
+            'content' => 'required|string|min:50',
+            'type' => 'in:text',
+        ]);
 
         $user = Auth::user();
         
@@ -49,30 +39,16 @@ class ScanController extends Controller
         try {
             $content = $request->input('content');
             $title = null;
-            
-            // If URL type, fetch content from the URL
-            if ($type === 'url') {
-                $urlContent = $this->fetchUrlContent($content);
-                $title = $urlContent['title'] ?? parse_url($content, PHP_URL_HOST);
-                $content = $urlContent['content'];
-                
-                if (strlen($content) < 50) {
-                    return response()->json([
-                        'error' => 'Could not extract enough text from the URL. Please try a different page.',
-                    ], 422);
-                }
-            }
 
             // Create the scan
             \Log::info('Creating scan', ['user' => $user->id, 'type' => $type, 'content_length' => strlen($content)]);
             
             $scan = Scan::create([
                 'user_id' => $user->id,
-                'type' => $type,
+                'type' => 'text',
                 'content' => $content,
                 'title' => $title,
                 'status' => 'pending',
-                'metadata' => $type === 'url' ? ['source_url' => $request->input('content')] : null,
             ]);
 
             \Log::info('Scan created, running detection', ['scan_id' => $scan->id]);
@@ -114,127 +90,170 @@ class ScanController extends Controller
     }
 
     /**
-     * Fetch text content from a URL
+     * Fetch text content from a URL using headless browser (Browsershot)
+     * This renders JavaScript before extracting text, so it works with
+     * dynamic sites like Dawn.com
      */
     private function fetchUrlContent(string $url): array
     {
-        $html = null;
+        \Log::info('Fetching URL with headless browser', ['url' => $url]);
         
-        // Try direct fetch first
+        $html = null;
+        $title = null;
+        
+        // Try Browsershot (headless Chrome) first - this renders JavaScript
         try {
-            $response = \Http::withHeaders([
-                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                'Accept-Language' => 'en-US,en;q=0.5',
-                'Accept-Encoding' => 'gzip, deflate',
-                'Connection' => 'keep-alive',
-                'Upgrade-Insecure-Requests' => '1',
-                'Cache-Control' => 'max-age=0',
-            ])->timeout(15)->get($url);
+            $browsershot = \Spatie\Browsershot\Browsershot::url($url)
+                ->setNodeBinary(config('services.browsershot.node_path', 'node'))
+                ->setNpmBinary(config('services.browsershot.npm_path', 'npm'))
+                ->userAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
+                ->setOption('args', ['--no-sandbox', '--disable-setuid-sandbox'])
+                ->waitUntilNetworkIdle()
+                ->timeout(20);
             
-            if ($response->successful()) {
-                $html = $response->body();
+            // Get rendered HTML after JavaScript execution
+            $html = $browsershot->bodyHtml();
+            
+            // Check if we got a CAPTCHA page instead of real content
+            if (stripos($html, 'verify you are human') !== false || 
+                stripos($html, 'captcha') !== false ||
+                stripos($html, 'checking your browser') !== false ||
+                stripos($html, 'cloudflare') !== false) {
+                
+                \Log::warning('Site showed CAPTCHA/bot protection', ['url' => $url]);
+                // Let it fall through to HTTP fallback or throw
+                $html = null;
+            } else {
+                \Log::info('Browsershot fetched HTML', ['length' => strlen($html)]);
             }
+            
         } catch (\Exception $e) {
-            // Direct fetch failed, will try fallback
-        }
-
-        // Fallback 1: Use webcache.googleusercontent.com (Google Cache)
-        if (!$html) {
+            \Log::warning('Browsershot failed, falling back to HTTP', ['error' => $e->getMessage()]);
+            
+            // Fallback to regular HTTP fetch
             try {
-                $cacheUrl = 'https://webcache.googleusercontent.com/search?q=cache:' . urlencode($url) . '&strip=1';
                 $response = \Http::withHeaders([
-                    'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                ])->timeout(15)->get($cacheUrl);
+                    'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                ])->timeout(15)->get($url);
                 
                 if ($response->successful()) {
                     $html = $response->body();
                 }
-            } catch (\Exception $e) {
-                // Google cache failed
+            } catch (\Exception $e2) {
+                // HTTP also failed
             }
         }
-
-        // Fallback 2: Use api.allorigins.win
+        
         if (!$html) {
-            try {
-                $proxyUrl = 'https://api.allorigins.win/raw?url=' . urlencode($url);
-                $response = \Http::timeout(20)->get($proxyUrl);
-                
-                if ($response->successful()) {
-                    $html = $response->body();
-                }
-            } catch (\Exception $e) {
-                // Proxy failed
-            }
-        }
-
-        // Fallback 3: Use thingproxy
-        if (!$html) {
-            try {
-                $proxyUrl = 'https://thingproxy.freeboard.io/fetch/' . $url;
-                $response = \Http::timeout(20)->get($proxyUrl);
-                
-                if ($response->successful()) {
-                    $html = $response->body();
-                }
-            } catch (\Exception $e) {
-                // Proxy failed
-            }
-        }
-
-        // Fallback 4: Use corsproxy.io
-        if (!$html) {
-            try {
-                $proxyUrl = 'https://corsproxy.io/?' . urlencode($url);
-                $response = \Http::timeout(20)->get($proxyUrl);
-                
-                if ($response->successful()) {
-                    $html = $response->body();
-                }
-            } catch (\Exception $e) {
-                // All methods failed
-            }
-        }
-
-        if (!$html) {
-            throw new \Exception('Could not fetch URL content. The website has strong anti-bot protection. Please copy and paste the article text directly.');
+            throw new \Exception('This website has bot protection. Please copy and paste the article text directly using the Text tab.');
         }
         
         // Extract title
-        preg_match('/<title>(.*?)<\/title>/is', $html, $titleMatch);
-        $title = isset($titleMatch[1]) ? html_entity_decode(trim($titleMatch[1])) : null;
-        
-        // Remove script, style, nav, header, footer tags
-        $html = preg_replace('/<script[^>]*>.*?<\/script>/is', '', $html);
-        $html = preg_replace('/<style[^>]*>.*?<\/style>/is', '', $html);
-        $html = preg_replace('/<nav[^>]*>.*?<\/nav>/is', '', $html);
-        $html = preg_replace('/<header[^>]*>.*?<\/header>/is', '', $html);
-        $html = preg_replace('/<footer[^>]*>.*?<\/footer>/is', '', $html);
-        $html = preg_replace('/<aside[^>]*>.*?<\/aside>/is', '', $html);
-        
-        // Get text from article or main content
-        if (preg_match('/<article[^>]*>(.*?)<\/article>/is', $html, $articleMatch)) {
-            $content = $articleMatch[1];
-        } elseif (preg_match('/<div[^>]*class="[^"]*(?:article|content|post|entry)[^"]*"[^>]*>(.*?)<\/div>/is', $html, $contentMatch)) {
-            $content = $contentMatch[1];
-        } elseif (preg_match('/<main[^>]*>(.*?)<\/main>/is', $html, $mainMatch)) {
-            $content = $mainMatch[1];
-        } elseif (preg_match('/<body[^>]*>(.*?)<\/body>/is', $html, $bodyMatch)) {
-            $content = $bodyMatch[1];
-        } else {
-            $content = $html;
+        if (preg_match('/<title[^>]*>(.*?)<\/title>/is', $html, $titleMatch)) {
+            $title = html_entity_decode(trim(strip_tags($titleMatch[1])));
         }
         
-        // Strip HTML tags and clean up
-        $content = strip_tags($content);
-        $content = html_entity_decode($content);
-        $content = preg_replace('/\s+/', ' ', $content);
-        $content = trim($content);
+        // Use DOMDocument for proper HTML parsing
+        libxml_use_internal_errors(true);
+        $dom = new \DOMDocument();
+        @$dom->loadHTML('<?xml encoding="UTF-8">' . $html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        libxml_clear_errors();
+        
+        $xpath = new \DOMXPath($dom);
+        
+        // Remove unwanted elements
+        $unwantedTags = ['script', 'style', 'nav', 'header', 'footer', 'aside', 'form', 'noscript', 'svg', 'iframe', 'button'];
+        foreach ($unwantedTags as $tag) {
+            $elements = $xpath->query('//' . $tag);
+            foreach ($elements as $element) {
+                if ($element->parentNode) {
+                    $element->parentNode->removeChild($element);
+                }
+            }
+        }
+        
+        // Remove elements with unwanted classes
+        $unwantedClasses = ['sidebar', 'menu', 'navigation', 'comment', 'social', 'share', 'related', 'advertisement', 'banner', 'widget', 'popup', 'modal'];
+        foreach ($unwantedClasses as $class) {
+            $elements = $xpath->query("//*[contains(@class, '{$class}')]");
+            foreach ($elements as $element) {
+                if ($element->parentNode) {
+                    $element->parentNode->removeChild($element);
+                }
+            }
+        }
+        
+        // Find article content - try multiple selectors
+        $articleNode = null;
+        $selectors = [
+            '//article',
+            '//main',
+            "//*[contains(@class, 'article-body')]",
+            "//*[contains(@class, 'article-content')]",
+            "//*[contains(@class, 'entry-content')]",
+            "//*[contains(@class, 'post-content')]",
+            "//*[contains(@class, 'story__content')]",
+            "//*[contains(@class, 'story-body')]",
+            "//*[contains(@class, 'content-body')]",
+            "//div[contains(@class, 'story')]",
+            "//div[contains(@class, 'content')]",
+        ];
+        
+        foreach ($selectors as $selector) {
+            $nodes = $xpath->query($selector);
+            if ($nodes->length > 0) {
+                $articleNode = $nodes->item(0);
+                \Log::info('Found article using selector', ['selector' => $selector]);
+                break;
+            }
+        }
+        
+        // If no article container found, use body
+        if (!$articleNode) {
+            $bodyNodes = $xpath->query('//body');
+            if ($bodyNodes->length > 0) {
+                $articleNode = $bodyNodes->item(0);
+            }
+        }
+        
+        // Extract all paragraphs from article
+        $paragraphs = [];
+        if ($articleNode) {
+            $pNodes = $xpath->query('.//p', $articleNode);
+            foreach ($pNodes as $pNode) {
+                $text = trim($pNode->textContent);
+                $text = preg_replace('/\s+/', ' ', $text);
+                if (strlen($text) > 30) {
+                    $paragraphs[] = $text;
+                }
+            }
+        }
+        
+        \Log::info('Paragraphs extracted', ['count' => count($paragraphs)]);
+        
+        // If not enough paragraphs, get all text from article
+        if (count($paragraphs) < 3 && $articleNode) {
+            $allText = trim($articleNode->textContent);
+            $allText = preg_replace('/\s+/', ' ', $allText);
+            if (strlen($allText) > strlen(implode(' ', $paragraphs))) {
+                $paragraphs = [$allText];
+            }
+        }
+        
+        $finalContent = implode("\n\n", $paragraphs);
+        $finalContent = html_entity_decode($finalContent);
+        $finalContent = preg_replace('/\s+/', ' ', $finalContent);
+        $finalContent = trim($finalContent);
+        
+        \Log::info('Final content extracted', [
+            'length' => strlen($finalContent),
+            'word_count' => str_word_count($finalContent)
+        ]);
         
         return [
             'title' => $title,
-            'content' => $content,
+            'content' => $finalContent,
         ];
     }
 
@@ -318,4 +337,5 @@ class ScanController extends Controller
 
         return $pdf->download($filename);
     }
+
 }

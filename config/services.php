@@ -75,4 +75,10 @@ return [
         'path' => env('FFMPEG_PATH', 'C:\\Users\\DELL5\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\\ffmpeg-8.0.1-full_build\\bin\\ffmpeg.exe'),
     ],
 
+    // Browsershot for headless browser URL fetching
+    'browsershot' => [
+        'node_path' => env('NODE_PATH', 'node'),
+        'npm_path' => env('NPM_PATH', 'npm'),
+    ],
+
 ];
