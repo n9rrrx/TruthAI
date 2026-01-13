@@ -7,6 +7,7 @@ use App\Http\Controllers\HumanizerController;
 use App\Http\Controllers\ImageController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -69,4 +70,11 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
     // Image/Video Analysis Routes
     Route::post('/analyze-image', [ImageController::class, 'analyze'])->name('analyze.image');
     Route::post('/analyze-video', [ImageController::class, 'analyzeVideo'])->name('analyze.video');
+
+    // Notification Routes
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+    Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
+    Route::delete('/notifications', [NotificationController::class, 'clearAll'])->name('notifications.clear-all');
 });
