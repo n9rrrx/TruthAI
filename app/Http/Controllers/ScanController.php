@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Scan;
+use App\Models\Notification;
 use App\Services\DetectorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -57,6 +58,18 @@ class ScanController extends Controller
             $scan = $this->detectorService->detect($scan);
 
             \Log::info('Detection complete', ['scan_id' => $scan->id, 'ai_score' => $scan->ai_score]);
+
+            // Create scan completion notification
+            $aiScore = round($scan->ai_score ?? 0);
+            $verdict = $aiScore >= 70 ? 'AI Generated' : ($aiScore >= 40 ? 'Mixed Content' : 'Human Written');
+            Notification::create([
+                'user_id' => $user->id,
+                'type' => 'scan',
+                'title' => 'Scan Complete',
+                'message' => "{$verdict} ({$aiScore}% AI) - {$scan->word_count} words analyzed",
+                'icon' => $aiScore >= 70 ? '🤖' : ($aiScore >= 40 ? '⚡' : '✍️'),
+                'link' => '/dashboard/scan/' . $scan->id,
+            ]);
 
             return response()->json([
                 'success' => true,

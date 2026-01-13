@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -35,6 +36,16 @@ class AuthController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'provider' => 'email',
+        ]);
+
+        // Create welcome notification
+        Notification::create([
+            'user_id' => $user->id,
+            'type' => 'system',
+            'title' => 'Welcome to TruthAI! 🎉',
+            'message' => 'Start by pasting text to detect AI-generated content. You have 100 free scans per day!',
+            'icon' => '👋',
+            'link' => '/dashboard/detector',
         ]);
 
         Auth::login($user);
