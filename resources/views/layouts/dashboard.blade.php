@@ -273,10 +273,30 @@
                         </button>
 
                         <!-- Notifications -->
-                        <button class="relative p-2.5 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors">
-                            <svg class="w-5 h-5 text-slate-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-                            <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-brand-primary rounded-full"></span>
-                        </button>
+                        <div class="relative">
+                            <button onclick="toggleNotifications()" class="relative p-2.5 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors">
+                                <svg class="w-5 h-5 text-slate-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                                <span id="notification-badge" class="hidden absolute top-1.5 right-1.5 w-2 h-2 bg-brand-primary rounded-full"></span>
+                            </button>
+
+                            <!-- Notifications Dropdown -->
+                            <div id="notifications-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-white dark:bg-brand-darker rounded-xl shadow-lg border border-slate-200 dark:border-white/10 z-50 overflow-hidden">
+                                <div class="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-white/10">
+                                    <h3 class="font-semibold text-slate-900 dark:text-white">Notifications</h3>
+                                    <button onclick="markAllNotificationsRead()" class="text-xs text-brand-primary hover:underline">Mark all read</button>
+                                </div>
+                                
+                                <div id="notifications-list" class="max-h-80 overflow-y-auto">
+                                    <div class="p-4 text-center text-slate-500 dark:text-slate-400">
+                                        <p>Loading...</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="px-4 py-3 border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5">
+                                    <button onclick="clearAllNotifications()" class="w-full text-xs text-slate-500 hover:text-red-500 transition-colors">Clear all notifications</button>
+                                </div>
+                            </div>
+                        </div>
 
                         <!-- Profile Dropdown -->
                         <div class="relative" x-data="{ open: false }">
@@ -407,6 +427,118 @@
             if (!profileButton && profileMenu && !profileMenu.contains(e.target)) {
                 profileMenu.classList.add('hidden');
             }
+            
+            // Also close notifications dropdown when clicking outside
+            const notificationsDropdown = document.getElementById('notifications-dropdown');
+            const notificationsButton = e.target.closest('[onclick="toggleNotifications()"]');
+            if (!notificationsButton && notificationsDropdown && !notificationsDropdown.contains(e.target)) {
+                notificationsDropdown.classList.add('hidden');
+            }
+        });
+
+        // Notifications System
+        function toggleNotifications() {
+            const dropdown = document.getElementById('notifications-dropdown');
+            dropdown.classList.toggle('hidden');
+            if (!dropdown.classList.contains('hidden')) {
+                fetchNotifications();
+            }
+        }
+
+        function fetchNotifications() {
+            fetch('/dashboard/notifications')
+                .then(res => res.json())
+                .then(data => {
+                    renderNotifications(data.notifications);
+                    updateNotificationBadge(data.unread_count);
+                })
+                .catch(err => {
+                    console.error('Failed to fetch notifications:', err);
+                    document.getElementById('notifications-list').innerHTML = 
+                        '<div class="p-4 text-center text-slate-500">Failed to load notifications</div>';
+                });
+        }
+
+        function renderNotifications(notifications) {
+            const container = document.getElementById('notifications-list');
+            
+            if (notifications.length === 0) {
+                container.innerHTML = `
+                    <div class="p-6 text-center text-slate-500 dark:text-slate-400">
+                        <svg class="w-12 h-12 mx-auto mb-2 text-slate-300 dark:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+                        <p>No notifications</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = notifications.map(n => `
+                <div class="flex gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer border-b border-slate-100 dark:border-white/5 last:border-0 ${n.is_read ? 'opacity-70' : ''}"
+                     onclick="markNotificationRead(${n.id}, '${n.link || ''}')">
+                    <span class="text-2xl flex-shrink-0">${n.icon || '🔔'}</span>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-slate-900 dark:text-white truncate">${n.title}</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 truncate">${n.message}</p>
+                        <p class="text-xs text-slate-400 mt-1">${n.time_ago}</p>
+                    </div>
+                    ${!n.is_read ? '<span class="w-2 h-2 bg-brand-primary rounded-full flex-shrink-0 mt-1.5"></span>' : ''}
+                </div>
+            `).join('');
+        }
+
+        function updateNotificationBadge(count) {
+            const badge = document.getElementById('notification-badge');
+            if (count > 0) {
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        function markNotificationRead(id, link) {
+            fetch(`/dashboard/notifications/${id}/read`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                    'Content-Type': 'application/json'
+                }
+            }).then(() => {
+                if (link) {
+                    window.location.href = link;
+                } else {
+                    fetchNotifications();
+                }
+            });
+        }
+
+        function markAllNotificationsRead() {
+            fetch('/dashboard/notifications/mark-all-read', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                    'Content-Type': 'application/json'
+                }
+            }).then(() => fetchNotifications());
+        }
+
+        function clearAllNotifications() {
+            if (confirm('Are you sure you want to clear all notifications?')) {
+                fetch('/dashboard/notifications', {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                        'Content-Type': 'application/json'
+                    }
+                }).then(() => fetchNotifications());
+            }
+        }
+
+        // Load notification badge on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/dashboard/notifications')
+                .then(res => res.json())
+                .then(data => updateNotificationBadge(data.unread_count))
+                .catch(() => {});
         });
     </script>
     @yield('scripts')
