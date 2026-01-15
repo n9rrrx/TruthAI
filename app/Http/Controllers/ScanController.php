@@ -5,16 +5,19 @@ namespace App\Http\Controllers;
 use App\Models\Scan;
 use App\Models\Notification;
 use App\Services\DetectorService;
+use App\Services\PlagiarismService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class ScanController extends Controller
 {
     private DetectorService $detectorService;
+    private PlagiarismService $plagiarismService;
 
-    public function __construct(DetectorService $detectorService)
+    public function __construct(DetectorService $detectorService, PlagiarismService $plagiarismService)
     {
         $this->detectorService = $detectorService;
+        $this->plagiarismService = $plagiarismService;
     }
 
     /**
@@ -42,7 +45,7 @@ class ScanController extends Controller
             $title = null;
 
             // Create the scan
-            \Log::info('Creating scan', ['user' => $user->id, 'type' => $type, 'content_length' => strlen($content)]);
+            \Log::info('Creating scan', ['user' => $user->id, 'type' => 'text', 'content_length' => strlen($content)]);
             
             $scan = Scan::create([
                 'user_id' => $user->id,
@@ -54,10 +57,26 @@ class ScanController extends Controller
 
             \Log::info('Scan created, running detection', ['scan_id' => $scan->id]);
 
-            // Run detection
+            // Run AI detection
             $scan = $this->detectorService->detect($scan);
 
             \Log::info('Detection complete', ['scan_id' => $scan->id, 'ai_score' => $scan->ai_score]);
+
+            // Run plagiarism check
+            try {
+                $plagiarismResult = $this->plagiarismService->check($content);
+                $scan->update([
+                    'plagiarism_score' => $plagiarismResult['plagiarism_score'],
+                    'original_score' => $plagiarismResult['original_score'],
+                    'plagiarism_sources' => $plagiarismResult['matches'],
+                ]);
+                \Log::info('Plagiarism check complete', [
+                    'scan_id' => $scan->id, 
+                    'plagiarism_score' => $plagiarismResult['plagiarism_score']
+                ]);
+            } catch (\Exception $e) {
+                \Log::warning('Plagiarism check failed', ['error' => $e->getMessage()]);
+            }
 
             // Create scan completion notification
             $aiScore = round($scan->ai_score ?? 0);
@@ -77,6 +96,9 @@ class ScanController extends Controller
                     'id' => $scan->id,
                     'ai_score' => $scan->ai_score ?? 0,
                     'human_score' => $scan->human_score ?? 100,
+                    'plagiarism_score' => $scan->plagiarism_score ?? 0,
+                    'original_score' => $scan->original_score ?? 100,
+                    'plagiarism_sources' => $scan->plagiarism_sources ?? [],
                     'verdict' => $scan->verdict,
                     'word_count' => $scan->word_count,
                     'status' => $scan->status,

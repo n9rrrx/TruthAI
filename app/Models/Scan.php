@@ -18,6 +18,9 @@ class Scan extends Model
         'title',
         'ai_score',
         'human_score',
+        'plagiarism_score',
+        'original_score',
+        'plagiarism_sources',
         'status',
         'humanized_text',
         'word_count',
@@ -27,6 +30,9 @@ class Scan extends Model
     protected $casts = [
         'ai_score' => 'decimal:2',
         'human_score' => 'decimal:2',
+        'plagiarism_score' => 'decimal:2',
+        'original_score' => 'decimal:2',
+        'plagiarism_sources' => 'array',
         'metadata' => 'array',
     ];
 
