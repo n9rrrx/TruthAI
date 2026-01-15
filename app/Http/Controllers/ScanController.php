@@ -62,9 +62,11 @@ class ScanController extends Controller
 
             \Log::info('Detection complete', ['scan_id' => $scan->id, 'ai_score' => $scan->ai_score]);
 
-            // Run plagiarism check
+            // Run plagiarism check (with optional deep scan)
+            $plagiarismResult = null;
             try {
-                $plagiarismResult = $this->plagiarismService->check($content);
+                $deepScan = $request->boolean('deep_scan', false);
+                $plagiarismResult = $this->plagiarismService->check($content, $deepScan);
                 $scan->update([
                     'plagiarism_score' => $plagiarismResult['plagiarism_score'],
                     'original_score' => $plagiarismResult['original_score'],
@@ -72,7 +74,8 @@ class ScanController extends Controller
                 ]);
                 \Log::info('Plagiarism check complete', [
                     'scan_id' => $scan->id, 
-                    'plagiarism_score' => $plagiarismResult['plagiarism_score']
+                    'plagiarism_score' => $plagiarismResult['plagiarism_score'],
+                    'deep_scan' => $deepScan,
                 ]);
             } catch (\Exception $e) {
                 \Log::warning('Plagiarism check failed', ['error' => $e->getMessage()]);
@@ -99,6 +102,9 @@ class ScanController extends Controller
                     'plagiarism_score' => $scan->plagiarism_score ?? 0,
                     'original_score' => $scan->original_score ?? 100,
                     'plagiarism_sources' => $scan->plagiarism_sources ?? [],
+                    'all_sentences' => $plagiarismResult['all_sentences'] ?? [],
+                    'checked_sentences' => $plagiarismResult['checked_sentences'] ?? 0,
+                    'total_sentences' => $plagiarismResult['total_sentences'] ?? 0,
                     'verdict' => $scan->verdict,
                     'word_count' => $scan->word_count,
                     'status' => $scan->status,
