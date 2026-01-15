@@ -16,7 +16,12 @@ class PlagiarismService
         $this->engineId = config('services.google_search.engine_id', '');
     }
 
-    public function check(string $text): array
+    /**
+     * Check text for plagiarism
+     * @param string $text The text to check
+     * @param bool $deepScan If true, checks more sentences (up to 10)
+     */
+    public function check(string $text, bool $deepScan = false): array
     {
         $sentences = $this->extractSentences($text);
         
@@ -26,6 +31,8 @@ class PlagiarismService
                 'original_score' => 100,
                 'matches' => [],
                 'checked_sentences' => 0,
+                'total_sentences' => 0,
+                'all_sentences' => [],
             ];
         }
 
@@ -37,19 +44,31 @@ class PlagiarismService
                 'original_score' => 100,
                 'matches' => [],
                 'checked_sentences' => 0,
+                'total_sentences' => count($sentences),
+                'all_sentences' => [],
                 'error' => 'API not configured',
             ];
         }
 
         $matches = [];
         $plagiarizedCount = 0;
-        // Check up to 5 sentences (API has 100 free queries/day limit)
-        $sentencesToCheck = array_slice($sentences, 0, 5);
+        $allSentences = []; // Track all sentences with their status
+        
+        // Deep scan checks more sentences (10 vs 5)
+        $maxSentences = $deepScan ? 10 : 5;
+        $sentencesToCheck = array_slice($sentences, 0, $maxSentences);
         $actuallyChecked = 0;
 
-        foreach ($sentencesToCheck as $sentence) {
+        foreach ($sentencesToCheck as $index => $sentence) {
             // Skip short sentences
-            if (str_word_count($sentence) < 6) continue;
+            if (str_word_count($sentence) < 6) {
+                $allSentences[] = [
+                    'text' => $sentence,
+                    'status' => 'skipped',
+                    'sources' => [],
+                ];
+                continue;
+            }
 
             $actuallyChecked++;
             $result = $this->searchWithGoogleAPI($sentence);
@@ -59,11 +78,33 @@ class PlagiarismService
                 $matches[] = [
                     'sentence' => $sentence,
                     'sources' => $result['sources'],
+                    'similarity' => $this->calculateSimilarity($sentence, $result['sources']),
+                ];
+                $allSentences[] = [
+                    'text' => $sentence,
+                    'status' => 'plagiarized',
+                    'sources' => $result['sources'],
+                    'similarity' => $this->calculateSimilarity($sentence, $result['sources']),
+                ];
+            } else {
+                $allSentences[] = [
+                    'text' => $sentence,
+                    'status' => 'original',
+                    'sources' => [],
                 ];
             }
             
             // Small delay to avoid rate limiting
             usleep(200000); // 200ms
+        }
+
+        // Mark remaining sentences as unchecked
+        for ($i = count($sentencesToCheck); $i < count($sentences); $i++) {
+            $allSentences[] = [
+                'text' => $sentences[$i],
+                'status' => 'unchecked',
+                'sources' => [],
+            ];
         }
 
         $plagiarismScore = $actuallyChecked > 0 
@@ -76,7 +117,36 @@ class PlagiarismService
             'matches' => $matches,
             'checked_sentences' => $actuallyChecked,
             'plagiarized_sentences' => $plagiarizedCount,
+            'total_sentences' => count($sentences),
+            'all_sentences' => $allSentences,
+            'deep_scan' => $deepScan,
         ];
+    }
+
+    /**
+     * Calculate similarity percentage based on snippet match
+     */
+    private function calculateSimilarity(string $sentence, array $sources): int
+    {
+        if (empty($sources)) return 0;
+        
+        $sentenceWords = array_map('strtolower', explode(' ', $sentence));
+        $maxSimilarity = 0;
+        
+        foreach ($sources as $source) {
+            if (empty($source['snippet'])) continue;
+            
+            $snippetWords = array_map('strtolower', explode(' ', $source['snippet']));
+            $matchingWords = count(array_intersect($sentenceWords, $snippetWords));
+            $similarity = count($sentenceWords) > 0 
+                ? round(($matchingWords / count($sentenceWords)) * 100) 
+                : 0;
+            
+            $maxSimilarity = max($maxSimilarity, $similarity);
+        }
+        
+        // Boost similarity if exact phrase found (since we search with quotes)
+        return min(100, $maxSimilarity + 20);
     }
 
     private function extractSentences(string $text): array
@@ -134,6 +204,7 @@ class PlagiarismService
                         'title' => $item['title'] ?? parse_url($item['link'], PHP_URL_HOST),
                         'url' => $item['link'],
                         'snippet' => $item['snippet'] ?? '',
+                        'domain' => parse_url($item['link'], PHP_URL_HOST) ?? '',
                     ];
                     
                     // Limit to 3 sources per sentence

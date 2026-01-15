@@ -83,6 +83,19 @@
                 <p class="text-red-500 text-sm"></p>
             </div>
 
+            <!-- Deep Scan Toggle -->
+            <div id="deep-scan-toggle" class="mt-4 flex items-center justify-between p-3 bg-slate-50 dark:bg-white/5 rounded-xl">
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                    <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Deep Plagiarism Scan</span>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="deep-scan-checkbox" class="sr-only peer">
+                    <div class="w-11 h-6 bg-slate-200 dark:bg-white/10 peer-focus:ring-2 peer-focus:ring-brand-primary/50 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary"></div>
+                </label>
+            </div>
+            <p class="text-xs text-slate-400 mt-1 ml-1">Checks 10 sentences instead of 5 for more thorough analysis</p>
+
             <!-- Scan Button -->
             <button id="scan-btn" onclick="runDetection()" class="w-full mt-4 bg-gradient-to-r from-brand-primary to-brand-accent text-white font-bold py-3.5 rounded-xl shadow-lg shadow-brand-primary/20 hover:shadow-brand-primary/40 transition-all hover:scale-[1.01] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
                 <svg id="scan-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
@@ -168,10 +181,37 @@
                         <div class="w-full bg-slate-200 dark:bg-white/10 rounded-full h-2 mb-3">
                             <div id="plagiarism-bar" class="h-2 rounded-full bg-gradient-to-r from-green-500 to-emerald-400 transition-all duration-500" style="width: 100%"></div>
                         </div>
-                        <div id="plagiarism-sources" class="hidden">
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">Similar content found:</p>
-                            <div id="plagiarism-source-list" class="space-y-1 text-xs">
-                                <!-- Dynamic source links -->
+                        
+                        <!-- Sentence Stats -->
+                        <div id="sentence-stats" class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-3 hidden">
+                            <span><span id="checked-count">0</span> of <span id="total-count">0</span> sentences checked</span>
+                            <span id="plagiarized-count-badge" class="px-2 py-0.5 rounded-full bg-red-500/10 text-red-500 hidden">0 plagiarized</span>
+                        </div>
+                        
+                        <!-- Highlighted Sentences Panel -->
+                        <div id="highlighted-text-section" class="hidden mt-4">
+                            <p class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2 flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                Sentence Analysis
+                            </p>
+                            <div id="highlighted-text" class="text-sm leading-relaxed p-3 bg-white dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/10 max-h-40 overflow-y-auto">
+                                <!-- Highlighted sentences will be inserted here -->
+                            </div>
+                            <div class="flex items-center gap-4 mt-2 text-xs">
+                                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-red-500/20 border border-red-500"></span> Plagiarized</span>
+                                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-green-500/20 border border-green-500"></span> Original</span>
+                                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-slate-300/50 border border-slate-400"></span> Unchecked</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Sources with Similarity -->
+                        <div id="plagiarism-sources" class="hidden mt-4">
+                            <p class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2 flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                                Matching Sources
+                            </p>
+                            <div id="plagiarism-source-list" class="space-y-2 text-xs">
+                                <!-- Dynamic source links with similarity -->
                             </div>
                         </div>
                     </div>
@@ -202,6 +242,13 @@
 <script>
     let currentType = 'text';
     let currentScanId = null;
+
+    // Helper function to escape HTML to prevent XSS
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
 
     function setDetectionType(type) {
         currentType = type;
@@ -303,6 +350,7 @@
         document.getElementById('scan-text').textContent = 'Analyzing...';
 
         try {
+            const deepScan = document.getElementById('deep-scan-checkbox')?.checked || false;
             const response = await fetch('/dashboard/scan', {
                 method: 'POST',
                 headers: {
@@ -313,6 +361,7 @@
                 body: JSON.stringify({
                     content: content,
                     type: currentType,
+                    deep_scan: deepScan,
                 }),
             });
 
@@ -439,19 +488,74 @@
             document.getElementById('plagiarism-icon').textContent = 
                 originalScore >= 80 ? '✅' : originalScore >= 50 ? '⚠️' : '❌';
             
-            // Show sources if any
+            // Show sentence stats
+            const sentenceStats = document.getElementById('sentence-stats');
+            if (scan.checked_sentences !== undefined && scan.total_sentences !== undefined) {
+                sentenceStats.classList.remove('hidden');
+                document.getElementById('checked-count').textContent = scan.checked_sentences;
+                document.getElementById('total-count').textContent = scan.total_sentences;
+                
+                // Show plagiarized count badge
+                const plagiarizedBadge = document.getElementById('plagiarized-count-badge');
+                const plagiarizedCount = scan.plagiarism_sources?.length || 0;
+                if (plagiarizedCount > 0) {
+                    plagiarizedBadge.classList.remove('hidden');
+                    plagiarizedBadge.textContent = plagiarizedCount + ' plagiarized';
+                } else {
+                    plagiarizedBadge.classList.add('hidden');
+                }
+            }
+            
+            // Show highlighted sentences
+            const highlightedSection = document.getElementById('highlighted-text-section');
+            const highlightedText = document.getElementById('highlighted-text');
+            if (scan.all_sentences && scan.all_sentences.length > 0) {
+                highlightedSection.classList.remove('hidden');
+                highlightedText.innerHTML = scan.all_sentences.map(s => {
+                    let className = '';
+                    let tooltip = '';
+                    if (s.status === 'plagiarized') {
+                        className = 'bg-red-500/20 border-b-2 border-red-500 px-1 rounded cursor-pointer hover:bg-red-500/30';
+                        tooltip = `title="Plagiarized - ${s.similarity || 0}% match"`;
+                    } else if (s.status === 'original') {
+                        className = 'bg-green-500/10 px-1 rounded';
+                        tooltip = 'title="Original content"';
+                    } else if (s.status === 'unchecked') {
+                        className = 'bg-slate-200/50 dark:bg-slate-600/30 px-1 rounded text-slate-500';
+                        tooltip = 'title="Not checked"';
+                    } else {
+                        className = 'text-slate-400';
+                        tooltip = 'title="Skipped (too short)"';
+                    }
+                    return `<span class="${className}" ${tooltip}>${escapeHtml(s.text)}</span>`;
+                }).join(' ');
+            } else {
+                highlightedSection.classList.add('hidden');
+            }
+            
+            // Show sources with enhanced display
             const sourcesDiv = document.getElementById('plagiarism-sources');
             const sourceListDiv = document.getElementById('plagiarism-source-list');
             if (scan.plagiarism_sources && scan.plagiarism_sources.length > 0) {
                 sourcesDiv.classList.remove('hidden');
                 sourceListDiv.innerHTML = scan.plagiarism_sources.map(match => `
-                    <div class="p-2 bg-white dark:bg-white/5 rounded border border-slate-200 dark:border-white/10">
-                        <p class="text-slate-700 dark:text-slate-300 truncate">"${match.sentence}"</p>
-                        ${match.sources.map(src => `
-                            <a href="${src.url}" target="_blank" class="text-brand-primary hover:underline truncate block">
-                                ${src.title || src.url}
-                            </a>
-                        `).join('')}
+                    <div class="p-3 bg-white dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/10">
+                        <div class="flex items-start justify-between gap-2 mb-2">
+                            <p class="text-slate-700 dark:text-slate-300 text-sm leading-relaxed">"${escapeHtml(match.sentence.substring(0, 100))}${match.sentence.length > 100 ? '...' : ''}"</p>
+                            ${match.similarity ? `<span class="shrink-0 px-2 py-0.5 rounded-full text-xs font-medium bg-red-500/10 text-red-500">${match.similarity}% match</span>` : ''}
+                        </div>
+                        <div class="space-y-1">
+                            ${match.sources.slice(0, 3).map(src => `
+                                <a href="${src.url}" target="_blank" class="flex items-center gap-2 p-2 rounded hover:bg-slate-100 dark:hover:bg-white/5 transition-colors group">
+                                    <img src="https://www.google.com/s2/favicons?domain=${src.domain || new URL(src.url).hostname}&sz=16" class="w-4 h-4" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%236b7280%22><path d=%22M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z%22/></svg>'">
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-brand-primary group-hover:underline truncate">${src.title || src.domain || 'Source'}</p>
+                                        <p class="text-slate-400 truncate text-xs">${src.url}</p>
+                                    </div>
+                                    <svg class="w-4 h-4 text-slate-400 group-hover:text-brand-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                </a>
+                            `).join('')}
+                        </div>
                     </div>
                 `).join('');
             } else {
@@ -520,6 +624,13 @@
         document.getElementById('image-preview').classList.add('hidden');
         document.getElementById('video-placeholder').classList.remove('hidden');
         document.getElementById('video-preview').classList.add('hidden');
+        
+        // Reset new plagiarism elements
+        document.getElementById('sentence-stats')?.classList.add('hidden');
+        document.getElementById('highlighted-text-section')?.classList.add('hidden');
+        document.getElementById('plagiarism-sources')?.classList.add('hidden');
+        document.getElementById('deep-scan-checkbox').checked = false;
+        
         selectedImageFile = null;
         selectedVideoFile = null;
         updateCharCount();
