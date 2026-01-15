@@ -81,4 +81,10 @@ return [
         'npm_path' => env('NPM_PATH', 'npm'),
     ],
 
+    // Google Custom Search for Plagiarism Detection
+    'google_search' => [
+        'api_key' => env('GOOGLE_SEARCH_API_KEY'),
+        'engine_id' => env('GOOGLE_SEARCH_ENGINE_ID'),
+    ],
+
 ];

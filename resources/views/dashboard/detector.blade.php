@@ -151,6 +151,32 @@
                     </div>
                 </div>
 
+                <!-- Plagiarism Results -->
+                <div id="plagiarism-section" class="mb-6 hidden">
+                    <h3 class="text-sm font-semibold text-slate-600 dark:text-slate-400 mb-3">Plagiarism Check</h3>
+                    <div class="bg-slate-50 dark:bg-white/5 rounded-xl p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-2">
+                                <span id="plagiarism-icon" class="text-xl">📄</span>
+                                <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Originality</span>
+                            </div>
+                            <div class="text-right">
+                                <span id="original-score-value" class="text-lg font-bold text-green-500">100%</span>
+                                <span class="text-sm text-slate-500"> original</span>
+                            </div>
+                        </div>
+                        <div class="w-full bg-slate-200 dark:bg-white/10 rounded-full h-2 mb-3">
+                            <div id="plagiarism-bar" class="h-2 rounded-full bg-gradient-to-r from-green-500 to-emerald-400 transition-all duration-500" style="width: 100%"></div>
+                        </div>
+                        <div id="plagiarism-sources" class="hidden">
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">Similar content found:</p>
+                            <div id="plagiarism-source-list" class="space-y-1 text-xs">
+                                <!-- Dynamic source links -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Actions -->
                 <div class="flex flex-col gap-3">
                     <div class="flex gap-3">
@@ -384,6 +410,56 @@
                 </div>
             `;
         }).join('');
+
+        // Display plagiarism results (only for text scans)
+        const plagiarismSection = document.getElementById('plagiarism-section');
+        if (currentType === 'text' && scan.original_score !== undefined) {
+            plagiarismSection.classList.remove('hidden');
+            
+            const originalScore = Math.round(scan.original_score);
+            const plagiarismScore = Math.round(scan.plagiarism_score || 0);
+            
+            // Update originality score
+            document.getElementById('original-score-value').textContent = originalScore + '%';
+            document.getElementById('original-score-value').className = 
+                originalScore >= 80 ? 'text-lg font-bold text-green-500' : 
+                originalScore >= 50 ? 'text-lg font-bold text-yellow-500' : 
+                'text-lg font-bold text-red-500';
+            
+            // Update bar width
+            document.getElementById('plagiarism-bar').style.width = originalScore + '%';
+            document.getElementById('plagiarism-bar').className = 
+                'h-2 rounded-full transition-all duration-500 ' + (
+                    originalScore >= 80 ? 'bg-gradient-to-r from-green-500 to-emerald-400' :
+                    originalScore >= 50 ? 'bg-gradient-to-r from-yellow-500 to-orange-400' :
+                    'bg-gradient-to-r from-red-500 to-rose-400'
+                );
+            
+            // Update icon
+            document.getElementById('plagiarism-icon').textContent = 
+                originalScore >= 80 ? '✅' : originalScore >= 50 ? '⚠️' : '❌';
+            
+            // Show sources if any
+            const sourcesDiv = document.getElementById('plagiarism-sources');
+            const sourceListDiv = document.getElementById('plagiarism-source-list');
+            if (scan.plagiarism_sources && scan.plagiarism_sources.length > 0) {
+                sourcesDiv.classList.remove('hidden');
+                sourceListDiv.innerHTML = scan.plagiarism_sources.map(match => `
+                    <div class="p-2 bg-white dark:bg-white/5 rounded border border-slate-200 dark:border-white/10">
+                        <p class="text-slate-700 dark:text-slate-300 truncate">"${match.sentence}"</p>
+                        ${match.sources.map(src => `
+                            <a href="${src.url}" target="_blank" class="text-brand-primary hover:underline truncate block">
+                                ${src.title || src.url}
+                            </a>
+                        `).join('')}
+                    </div>
+                `).join('');
+            } else {
+                sourcesDiv.classList.add('hidden');
+            }
+        } else {
+            plagiarismSection.classList.add('hidden');
+        }
 
         // Store scan ID and show download button
         currentScanId = scan.id;
