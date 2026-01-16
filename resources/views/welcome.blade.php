@@ -4,6 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TruthAI | Premium AI Analytics</title>
+    
+    <!-- Favicon & App Icons -->
+    <link rel="icon" type="image/png" href="/images/favicon.png">
+    <link rel="apple-touch-icon" href="/images/logo-icon.png">
+    <meta name="theme-color" content="#00C0C2">
+    
+    <!-- Open Graph / Social Media -->
+    <meta property="og:title" content="TruthAI | Premium AI Analytics">
+    <meta property="og:description" content="Detect AI generation with 99.2% accuracy. Humanize text to bypass filters.">
+    <meta property="og:image" content="/images/logo-wordmark.png">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
@@ -250,9 +263,7 @@
     <header class="fixed top-6 left-0 right-0 z-50 flex justify-center px-4">
         <nav class="glass-panel rounded-full px-6 py-3 flex items-center justify-between gap-12 shadow-lg shadow-black/5 dark:shadow-black/20 transition-all duration-300 hover:scale-[1.01] max-w-6xl w-full">
             <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-primary to-brand-accent flex items-center justify-center text-white font-bold shadow-lg shadow-brand-primary/20">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                </div>
+                <img src="/images/logo-icon.png" alt="TruthAI" class="w-8 h-8 rounded-lg shadow-lg shadow-brand-primary/20">
                 <span class="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400">
                     TruthAI
                 </span>
@@ -590,9 +601,7 @@
     <footer class="py-8 px-4 border-t border-slate-200 dark:border-white/10 relative z-10">
         <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
             <div class="flex items-center gap-2">
-                <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-brand-primary to-brand-accent flex items-center justify-center">
-                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                </div>
+                <img src="/images/logo-icon.png" alt="TruthAI" class="w-6 h-6 rounded-lg">
                 <span class="font-bold text-slate-800 dark:text-white">TruthAI</span>
             </div>
             <p class="text-sm text-slate-500 dark:text-slate-400">© 2026 TruthAI. All rights reserved.</p>
