@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Dashboard') | TruthAI</title>
+    
+    <!-- Favicon & App Icons -->
+    <link rel="icon" type="image/png" href="/images/favicon.png">
+    <link rel="apple-touch-icon" href="/images/logo-icon.png">
+    <meta name="theme-color" content="#00C0C2">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
@@ -177,9 +183,7 @@
                 <!-- Expanded Header -->
                 <div id="header-expanded" class="flex items-center justify-between">
                     <a href="/dashboard" class="flex items-center gap-2">
-                        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-primary to-brand-accent flex items-center justify-center text-white shadow-lg shadow-brand-primary/20">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        </div>
+                        <img src="/images/logo-icon.png" alt="TruthAI" class="w-9 h-9 rounded-xl shadow-lg shadow-brand-primary/20">
                         <span id="logo-text" class="font-bold text-lg text-slate-900 dark:text-white">TruthAI</span>
                     </a>
                     <button onclick="toggleSidebar()" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 text-slate-500 dark:text-slate-400 hover:text-brand-primary transition-colors">
@@ -189,8 +193,8 @@
                 <!-- Collapsed Header -->
                 <div id="header-collapsed">
                     <div class="relative group">
-                        <a href="/dashboard" class="flex w-9 h-9 rounded-xl bg-gradient-to-br from-brand-primary to-brand-accent items-center justify-center text-white shadow-lg shadow-brand-primary/20">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <a href="/dashboard" class="flex">
+                            <img src="/images/logo-icon.png" alt="TruthAI" class="w-9 h-9 rounded-xl shadow-lg shadow-brand-primary/20">
                         </a>
                         <button onclick="toggleSidebar()" class="absolute inset-0 w-9 h-9 rounded-xl bg-brand-primary flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
