@@ -9,6 +9,7 @@
     <link rel="icon" type="image/png" href="/images/favicon.png">
     <link rel="apple-touch-icon" href="/images/logo-icon.png">
     <meta name="theme-color" content="#00C0C2">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
