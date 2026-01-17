@@ -298,7 +298,6 @@ class ScanController extends Controller
         ];
     }
 
-
     /**
      * Get scan details
      */
@@ -309,28 +308,10 @@ class ScanController extends Controller
             abort(403);
         }
 
-        return response()->json([
-            'scan' => [
-                'id' => $scan->id,
-                'type' => $scan->type,
-                'title' => $scan->title,
-                'content' => $scan->content,
-                'ai_score' => $scan->ai_score,
-                'human_score' => $scan->human_score,
-                'verdict' => $scan->verdict,
-                'word_count' => $scan->word_count,
-                'status' => $scan->status,
-                'created_at' => $scan->created_at->toISOString(),
-                'results' => $scan->results->map(fn($r) => [
-                    'provider' => $r->provider,
-                    'provider_name' => $r->provider_name,
-                    'ai_score' => $r->ai_score,
-                    'human_score' => $r->human_score,
-                    'confidence' => $r->confidence,
-                    'status' => $r->status,
-                ]),
-            ],
-        ]);
+        // Load results relationship
+        $scan->load('results');
+
+        return view('dashboard.scan.show', compact('scan'));
     }
 
     /**
