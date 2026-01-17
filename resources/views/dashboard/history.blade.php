@@ -35,6 +35,7 @@
                         <th class="text-left px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Content</th>
                         <th class="text-left px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Type</th>
                         <th class="text-left px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">AI Score</th>
+                        <th class="text-left px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Plagiarism</th>
                         <th class="text-left px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Date</th>
                         <th class="text-left px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
                     </tr>
@@ -89,13 +90,26 @@
                                 <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-500/10 text-slate-500">{{ ucfirst($scan->status) }}</span>
                             @endif
                         </td>
+                        <td class="px-6 py-4">
+                            @if($scan->status === 'completed' && $scan->plagiarism_score !== null)
+                                @if($scan->plagiarism_score >= 40)
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-red-500/10 text-red-500">{{ number_format($scan->plagiarism_score, 0) }}%</span>
+                                @elseif($scan->plagiarism_score >= 15)
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-500/10 text-yellow-600">{{ number_format($scan->plagiarism_score, 0) }}%</span>
+                                @else
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-green-500/10 text-green-500">{{ number_format($scan->plagiarism_score, 0) }}%</span>
+                                @endif
+                            @else
+                                <span class="text-xs text-slate-400">—</span>
+                            @endif
+                        </td>
                         <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">{{ $scan->created_at->diffForHumans() }}</td>
                         <td class="px-6 py-4">
                             <div class="flex gap-2">
-                                <button class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 hover:text-brand-primary transition-colors">
+                                <a href="/dashboard/scan/{{ $scan->id }}" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 hover:text-brand-primary transition-colors" title="View Details">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                                </button>
-                                <button class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 hover:text-red-500 transition-colors">
+                                </a>
+                                <button onclick="deleteScan({{ $scan->id }})" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 hover:text-red-500 transition-colors" title="Delete">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                 </button>
                             </div>
@@ -103,7 +117,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5" class="px-6 py-12 text-center">
+                        <td colspan="6" class="px-6 py-12 text-center">
                             <div class="flex flex-col items-center gap-3">
                                 <div class="w-16 h-16 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center">
                                     <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
@@ -134,4 +148,35 @@
         @endif
     </div>
 </div>
+@endsection
+
+@section('scripts')
+<script>
+    function deleteScan(scanId) {
+        if (!confirm('Are you sure you want to delete this scan? This action cannot be undone.')) {
+            return;
+        }
+        
+        fetch(`/dashboard/scan/${scanId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                // Remove the row from the table
+                window.location.reload();
+            } else {
+                alert('Failed to delete scan. Please try again.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    }
+</script>
 @endsection
