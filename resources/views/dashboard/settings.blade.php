@@ -3,7 +3,7 @@
 @section('title', 'Settings')
 
 @section('content')
-<div class="space-y-6 max-w-4xl">
+<div class="space-y-6 max-w-4xl mx-auto">
     <!-- Header -->
     <div>
         <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Settings</h1>
