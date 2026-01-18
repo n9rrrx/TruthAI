@@ -45,7 +45,21 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
     })->name('dashboard.humanizer');
 
     Route::get('/history', function () {
-        $scans = auth()->user()->scans()->latest()->paginate(15);
+        $query = auth()->user()->scans();
+        
+        // Filter by type
+        $type = request('type');
+        if ($type && $type !== 'all') {
+            $query->where('type', $type);
+        }
+        
+        // Filter by date range
+        $days = request('days', '7');
+        if ($days !== 'all') {
+            $query->where('created_at', '>=', now()->subDays((int) $days));
+        }
+        
+        $scans = $query->latest()->paginate(15)->withQueryString();
         return view('dashboard.history', compact('scans'));
     })->name('dashboard.history');
 

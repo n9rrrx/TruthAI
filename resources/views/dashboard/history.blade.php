@@ -11,17 +11,18 @@
             <p class="text-slate-500 dark:text-slate-400">View and manage your previous scans.</p>
         </div>
         <div class="flex gap-3">
-            <select class="input-field px-4 py-2.5 rounded-xl outline-none text-sm">
-                <option>All Types</option>
-                <option>Text</option>
-                <option>Image</option>
-                <option>URL</option>
-                <option>Video</option>
+            <select id="typeFilter" class="input-field px-4 py-2.5 rounded-xl outline-none text-sm cursor-pointer">
+                <option value="all" {{ request('type', 'all') === 'all' ? 'selected' : '' }}>All Types</option>
+                <option value="text" {{ request('type') === 'text' ? 'selected' : '' }}>Text</option>
+                <option value="image" {{ request('type') === 'image' ? 'selected' : '' }}>Image</option>
+                <option value="url" {{ request('type') === 'url' ? 'selected' : '' }}>URL</option>
+                <option value="video" {{ request('type') === 'video' ? 'selected' : '' }}>Video</option>
+                <option value="humanize" {{ request('type') === 'humanize' ? 'selected' : '' }}>Humanize</option>
             </select>
-            <select class="input-field px-4 py-2.5 rounded-xl outline-none text-sm">
-                <option>Last 7 days</option>
-                <option>Last 30 days</option>
-                <option>All time</option>
+            <select id="dateFilter" class="input-field px-4 py-2.5 rounded-xl outline-none text-sm cursor-pointer">
+                <option value="7" {{ request('days', '7') === '7' ? 'selected' : '' }}>Last 7 days</option>
+                <option value="30" {{ request('days') === '30' ? 'selected' : '' }}>Last 30 days</option>
+                <option value="all" {{ request('days') === 'all' ? 'selected' : '' }}>All time</option>
             </select>
         </div>
     </div>
@@ -178,5 +179,29 @@
             alert('An error occurred. Please try again.');
         });
     }
+
+    // Filter functionality
+    function applyFilters() {
+        const typeFilter = document.getElementById('typeFilter').value;
+        const dateFilter = document.getElementById('dateFilter').value;
+        
+        const params = new URLSearchParams();
+        
+        if (typeFilter && typeFilter !== 'all') {
+            params.set('type', typeFilter);
+        }
+        
+        if (dateFilter && dateFilter !== '7') {
+            params.set('days', dateFilter);
+        }
+        
+        const queryString = params.toString();
+        const newUrl = window.location.pathname + (queryString ? '?' + queryString : '');
+        window.location.href = newUrl;
+    }
+
+    // Add event listeners to filter dropdowns
+    document.getElementById('typeFilter').addEventListener('change', applyFilters);
+    document.getElementById('dateFilter').addEventListener('change', applyFilters);
 </script>
 @endsection
