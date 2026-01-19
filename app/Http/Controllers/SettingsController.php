@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\Password;
 
 class SettingsController extends Controller
@@ -28,12 +29,42 @@ class SettingsController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+            'avatar' => ['nullable', 'file', 'max:2048'], // 2MB max
         ]);
 
-        $user->update([
+        $updateData = [
             'name' => $request->name,
             'email' => $request->email,
-        ]);
+        ];
+
+        // Handle avatar upload
+        if ($request->hasFile('avatar') && $request->file('avatar')->isValid()) {
+            try {
+                $avatar = $request->file('avatar');
+                $extension = $avatar->getClientOriginalExtension() ?: 'jpg';
+                $filename = 'avatar_' . time() . '_' . uniqid() . '.' . $extension;
+                
+                // Ensure directory exists
+                Storage::disk('public')->makeDirectory('avatars');
+                
+                // Delete old avatar if exists and is a local file
+                if ($user->avatar && str_starts_with($user->avatar, '/storage/avatars/')) {
+                    $oldPath = str_replace('/storage/', '', $user->avatar);
+                    Storage::disk('public')->delete($oldPath);
+                }
+                
+                // Store the new file
+                $stored = $avatar->storeAs('avatars', $filename, 'public');
+                
+                if ($stored) {
+                    $updateData['avatar'] = '/storage/avatars/' . $filename;
+                }
+            } catch (\Exception $e) {
+                \Log::error('Avatar upload failed: ' . $e->getMessage());
+            }
+        }
+
+        $user->update($updateData);
 
         return back()->with('success', 'Profile updated successfully!');
     }
