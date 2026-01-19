@@ -8,6 +8,7 @@ use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules;
 
 class AuthController extends Controller
@@ -29,13 +30,53 @@ class AuthController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'avatar' => ['nullable', 'file', 'max:2048'], // 2MB max (PHP limit)
         ]);
+
+        // Handle avatar upload
+        $avatarPath = null;
+        \Log::info('Avatar upload check', [
+            'hasFile' => $request->hasFile('avatar'),
+            'allFiles' => $request->allFiles(),
+        ]);
+        
+        if ($request->hasFile('avatar')) {
+            $avatar = $request->file('avatar');
+            \Log::info('Avatar file details', [
+                'isValid' => $avatar->isValid(),
+                'error' => $avatar->getError(),
+                'originalName' => $avatar->getClientOriginalName(),
+                'size' => $avatar->getSize(),
+                'mimeType' => $avatar->getMimeType(),
+            ]);
+            
+            if ($avatar->isValid()) {
+                try {
+                    $extension = $avatar->getClientOriginalExtension() ?: 'jpg';
+                    $filename = 'avatar_' . time() . '_' . uniqid() . '.' . $extension;
+                    
+                    // Ensure directory exists
+                    Storage::disk('public')->makeDirectory('avatars');
+                    
+                    // Store the file
+                    $stored = $avatar->storeAs('avatars', $filename, 'public');
+                    \Log::info('Avatar stored', ['stored' => $stored, 'filename' => $filename]);
+                    
+                    if ($stored) {
+                        $avatarPath = '/storage/avatars/' . $filename;
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('Avatar upload failed: ' . $e->getMessage());
+                }
+            }
+        }
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'provider' => 'email',
+            'avatar' => $avatarPath,
         ]);
 
         // Create welcome notification
