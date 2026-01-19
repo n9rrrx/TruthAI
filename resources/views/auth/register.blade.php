@@ -111,6 +111,98 @@
             border-color: #00C0C2;
         }
 
+        /* Walking Robot Animations */
+        .floating-robot {
+            animation: walk-around 20s linear infinite;
+        }
+
+        @keyframes walk-around {
+            0% { 
+                top: 20%; 
+                right: 10%; 
+            }
+            25% { 
+                top: 60%; 
+                right: 30%; 
+            }
+            50% { 
+                top: 70%; 
+                right: 10%; 
+            }
+            75% { 
+                top: 40%; 
+                right: 25%; 
+            }
+            100% { 
+                top: 20%; 
+                right: 10%; 
+            }
+        }
+
+        .floating-robot svg {
+            animation: body-bob 0.5s ease-in-out infinite;
+        }
+
+        @keyframes body-bob {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .robot-leg-left {
+            animation: leg-walk-left 0.5s ease-in-out infinite;
+            transform-origin: center top;
+        }
+
+        .robot-leg-right {
+            animation: leg-walk-right 0.5s ease-in-out infinite;
+            transform-origin: center top;
+        }
+
+        @keyframes leg-walk-left {
+            0%, 100% { transform: rotate(-8deg); }
+            50% { transform: rotate(8deg); }
+        }
+
+        @keyframes leg-walk-right {
+            0%, 100% { transform: rotate(8deg); }
+            50% { transform: rotate(-8deg); }
+        }
+
+        .robot-eye {
+            animation: blink 4s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 90%, 100% { opacity: 1; }
+            95% { opacity: 0.3; }
+        }
+
+        .antenna-glow {
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { opacity: 1; filter: drop-shadow(0 0 3px #00E0E3); }
+            50% { opacity: 0.6; filter: drop-shadow(0 0 8px #00E0E3); }
+        }
+
+        .chest-bar {
+            animation: pulse-bar 1.5s ease-in-out infinite;
+        }
+
+        .chest-bar.delay-1 {
+            animation-delay: 0.3s;
+        }
+
+        .chest-bar.delay-2 {
+            animation-delay: 0.6s;
+        }
+
+        @keyframes pulse-bar {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
         body::-webkit-scrollbar { width: 8px; }
         body::-webkit-scrollbar-track { background: #01090D; }
         body::-webkit-scrollbar-thumb { background: #00C0C2; border-radius: 4px; }
@@ -141,9 +233,33 @@
                 </p>
 
                 <!-- Form -->
-                <form method="POST" action="{{ route('register') }}" class="space-y-5">
+                <form method="POST" action="{{ route('register') }}" class="space-y-5" enctype="multipart/form-data">
                     @csrf
                     
+                    <!-- Profile Picture Upload -->
+                    <div class="flex flex-col items-center mb-2">
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Profile Picture <span class="text-slate-400">(optional)</span></label>
+                        <div class="relative group cursor-pointer" onclick="document.getElementById('avatar-input').click()">
+                            <div id="avatar-preview" class="w-24 h-24 rounded-full bg-gradient-to-br from-brand-primary/20 to-brand-accent/20 dark:from-brand-primary/30 dark:to-brand-accent/30 border-2 border-dashed border-brand-primary/50 flex items-center justify-center overflow-hidden transition-all duration-300 group-hover:border-brand-primary group-hover:scale-105">
+                                <svg id="avatar-placeholder" class="w-10 h-10 text-brand-primary/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                </svg>
+                                <img id="avatar-image" src="" alt="Preview" class="w-full h-full object-cover hidden">
+                            </div>
+                            <div class="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <input type="file" id="avatar-input" name="avatar" accept="image/*" class="hidden" onchange="previewAvatar(this)">
+                        <p class="text-xs text-slate-400 mt-2">Click to upload</p>
+                        @error('avatar')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
                     <div>
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Full Name</label>
                         <input type="text" name="name" value="{{ old('name') }}" placeholder="Enter your name" class="input-field w-full px-4 py-3 rounded-xl text-slate-800 dark:text-white outline-none" required>
@@ -227,6 +343,83 @@
             <div class="absolute top-20 right-20 w-72 h-72 bg-brand-primary/30 rounded-full blur-[80px]"></div>
             <div class="absolute bottom-40 left-20 w-96 h-96 bg-brand-accent/20 rounded-full blur-[100px]"></div>
             
+            <!-- Floating Robot -->
+            <div class="absolute top-1/4 right-1/4 transform -translate-y-1/2 floating-robot">
+                <svg class="w-56 h-72 drop-shadow-2xl" viewBox="0 0 160 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Shadow -->
+                    <ellipse cx="80" cy="185" rx="35" ry="8" fill="rgba(0, 0, 0, 0.3)" class="robot-shadow"/>
+                    
+                    <!-- Left Leg with Sneaker -->
+                    <g class="robot-leg-left">
+                        <path d="M55 165 L55 175 Q55 182 62 182 L72 182 Q78 182 78 176 L78 165" fill="#5a5a5a" stroke="#4a4a4a" stroke-width="1"/>
+                        <ellipse cx="67" cy="180" rx="14" ry="6" fill="#6a6a6a"/>
+                        <path d="M55 178 Q67 184 78 178" stroke="#888" stroke-width="1" fill="none"/>
+                    </g>
+                    
+                    <!-- Right Leg with Sneaker -->
+                    <g class="robot-leg-right">
+                        <path d="M82 165 L82 175 Q82 182 89 182 L99 182 Q105 182 105 176 L105 165" fill="#5a5a5a" stroke="#4a4a4a" stroke-width="1"/>
+                        <ellipse cx="93" cy="180" rx="14" ry="6" fill="#6a6a6a"/>
+                        <path d="M82 178 Q93 184 105 178" stroke="#888" stroke-width="1" fill="none"/>
+                    </g>
+                    
+                    <!-- Hoodie Body -->
+                    <path d="M45 95 L45 165 L115 165 L115 95 Q115 85 105 82 L55 82 Q45 85 45 95" fill="#5a5a5a" stroke="#4a4a4a" stroke-width="1"/>
+                    
+                    <!-- Hoodie pocket -->
+                    <path d="M55 130 L105 130 L105 150 Q105 155 100 155 L60 155 Q55 155 55 150 Z" fill="#4a4a4a" stroke="#3a3a3a" stroke-width="1"/>
+                    
+                    <!-- Hoodie strings -->
+                    <line x1="70" y1="82" x2="68" y2="105" stroke="#7a7a7a" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="90" y1="82" x2="92" y2="105" stroke="#7a7a7a" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="68" cy="107" r="3" fill="#8a8a8a"/>
+                    <circle cx="92" cy="107" r="3" fill="#8a8a8a"/>
+                    
+                    <!-- Arms -->
+                    <path d="M45 95 L30 110 L30 140 Q30 145 35 145 L40 145 Q45 145 45 140 L45 95" fill="#5a5a5a" stroke="#4a4a4a" stroke-width="1"/>
+                    <path d="M115 95 L130 110 L130 140 Q130 145 125 145 L120 145 Q115 145 115 140 L115 95" fill="#5a5a5a" stroke="#4a4a4a" stroke-width="1"/>
+                    
+                    <!-- Robot Hands -->
+                    <circle cx="37" cy="147" r="8" fill="#2a2a2a"/>
+                    <circle cx="123" cy="147" r="8" fill="#2a2a2a"/>
+                    
+                    <!-- Hood -->
+                    <path d="M35 75 Q35 25 80 20 Q125 25 125 75 L125 90 Q125 95 115 95 L45 95 Q35 95 35 90 Z" fill="#5a5a5a" stroke="#4a4a4a" stroke-width="1"/>
+                    
+                    <!-- Hood inner shadow -->
+                    <path d="M45 70 Q45 35 80 32 Q115 35 115 70 L115 82 L45 82 Z" fill="#3a3a3a"/>
+                    
+                    <!-- Robot Face (dark visor) -->
+                    <rect x="50" y="45" width="60" height="40" rx="8" fill="#1a1a1a" stroke="#2a2a2a" stroke-width="1"/>
+                    
+                    <!-- Glowing Eyes -->
+                    <rect class="robot-eye" x="58" y="52" width="12" height="18" rx="2" fill="#ff6b6b">
+                        <animate attributeName="opacity" values="1;0.6;1" dur="3s" repeatCount="indefinite"/>
+                    </rect>
+                    <rect class="robot-eye" x="90" y="52" width="12" height="18" rx="2" fill="#ff6b6b">
+                        <animate attributeName="opacity" values="1;0.6;1" dur="3s" repeatCount="indefinite"/>
+                    </rect>
+                    
+                    <!-- Eye glow effect -->
+                    <rect x="58" y="52" width="12" height="18" rx="2" fill="#ff6b6b" opacity="0.5" filter="url(#glow)"/>
+                    <rect x="90" y="52" width="12" height="18" rx="2" fill="#ff6b6b" opacity="0.5" filter="url(#glow)"/>
+                    
+                    <!-- Kissy mouth -->
+                    <ellipse cx="80" cy="76" rx="4" ry="5" fill="#444"/>
+                    
+                    <!-- Glow filter -->
+                    <defs>
+                        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                            <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+                            <feMerge>
+                                <feMergeNode in="coloredBlur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                    </defs>
+                </svg>
+            </div>
+
             <!-- Content -->
             <div class="relative z-10 flex flex-col justify-end p-16">
                 <div class="glass-panel rounded-3xl p-8 max-w-lg">
@@ -340,6 +533,24 @@
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
         });
+
+        // Avatar preview function
+        function previewAvatar(input) {
+            const preview = document.getElementById('avatar-image');
+            const placeholder = document.getElementById('avatar-placeholder');
+            
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.classList.remove('hidden');
+                    placeholder.classList.add('hidden');
+                };
+                
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
     </script>
 </body>
 </html>
