@@ -8,6 +8,7 @@ use App\Http\Controllers\ImageController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\BillingController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -31,6 +32,9 @@ Route::middleware('guest')->group(function () {
 
 // Logout (Auth only)
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
+
+// Stripe Webhook (no auth, CSRF exempt)
+Route::post('/stripe/webhook', [BillingController::class, 'webhook'])->name('stripe.webhook');
 
 // Dashboard Routes (Auth only)
 Route::prefix('dashboard')->middleware('auth')->group(function () {
@@ -63,6 +67,14 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
         return view('dashboard.history', compact('scans'));
     })->name('dashboard.history');
 
+    // Billing Routes
+    Route::get('/billing', [BillingController::class, 'index'])->name('billing');
+    Route::get('/billing/checkout', [BillingController::class, 'showCheckout'])->name('billing.checkout');
+    Route::post('/billing/subscribe', [BillingController::class, 'subscribe'])->name('billing.subscribe');
+    Route::get('/billing/success', [BillingController::class, 'success'])->name('billing.success');
+    Route::get('/billing/cancel', [BillingController::class, 'cancel'])->name('billing.cancel');
+    Route::get('/billing/portal', [BillingController::class, 'portal'])->name('billing.portal');
+
     // Settings Routes
     Route::get('/settings', [SettingsController::class, 'index'])->name('dashboard.settings');
     Route::post('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile');
@@ -92,3 +104,4 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
     Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
     Route::delete('/notifications', [NotificationController::class, 'clearAll'])->name('notifications.clear-all');
 });
+

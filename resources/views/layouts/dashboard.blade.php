@@ -224,6 +224,10 @@
                 </a>
 
                 <div class="pt-4 mt-4 border-t border-slate-200 dark:border-white/5">
+                    <a href="/dashboard/billing" data-tooltip="Billing" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 @if(request()->is('dashboard/billing*')) active @endif">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                        <span class="nav-text font-medium">Billing</span>
+                    </a>
                     <a href="/dashboard/settings" data-tooltip="Settings" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 @if(request()->is('dashboard/settings')) active @endif">
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                         <span class="nav-text font-medium">Settings</span>
@@ -236,17 +240,22 @@
                 <div class="card rounded-xl p-4">
                     @php
                         $todayScans = auth()->user()->today_scans_count;
-                        $dailyLimit = 100;
+                        $dailyLimit = auth()->user()->daily_limit;
                         $percentage = min(($todayScans / $dailyLimit) * 100, 100);
+                        $isPro = auth()->user()->isPro();
                     @endphp
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-sm font-medium text-slate-600 dark:text-slate-400">Scans Today</span>
-                        <span class="text-sm font-bold text-brand-primary">{{ $todayScans }}/{{ $dailyLimit }}</span>
+                        <span class="text-sm font-bold text-brand-primary">{{ $todayScans }}/{{ number_format($dailyLimit) }}</span>
                     </div>
                     <div class="w-full bg-slate-200 dark:bg-white/10 rounded-full h-2">
                         <div class="bg-gradient-to-r from-brand-primary to-brand-accent h-2 rounded-full" style="width: {{ $percentage }}%"></div>
                     </div>
-                    <p class="text-xs text-slate-500 dark:text-slate-500 mt-2">Upgrade for unlimited scans</p>
+                    @if($isPro)
+                        <p class="text-xs text-brand-primary mt-2">💎 Pro Plan Active</p>
+                    @else
+                        <a href="/dashboard/billing" class="text-xs text-slate-500 dark:text-slate-500 mt-2 hover:text-brand-primary block">Upgrade for 10,000 scans/day →</a>
+                    @endif
                 </div>
             </div>
         </aside>
@@ -315,7 +324,9 @@
                                 @endif
                                 <div class="hidden md:block text-left">
                                     <p class="text-sm font-semibold text-slate-900 dark:text-white">{{ auth()->user()->name }}</p>
-                                    <p class="text-xs text-slate-500">Free Plan</p>
+                                    <p class="text-xs {{ auth()->user()->isPro() ? 'text-brand-primary font-semibold' : 'text-slate-500' }}">
+                                        {{ auth()->user()->isPro() ? '💎 Pro Plan' : 'Free Plan' }}
+                                    </p>
                                 </div>
                                 <svg class="w-4 h-4 text-slate-400 hidden md:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </button>

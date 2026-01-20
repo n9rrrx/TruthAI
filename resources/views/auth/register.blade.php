@@ -11,6 +11,7 @@
     <meta name="theme-color" content="#00C0C2">
     
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://js.stripe.com/v3/"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <script>
@@ -295,8 +296,82 @@
                         <input type="password" name="password_confirmation" placeholder="Confirm your password" class="input-field w-full px-4 py-3 rounded-xl text-slate-800 dark:text-white outline-none" required>
                     </div>
 
-                    <button type="submit" class="w-full bg-gradient-to-r from-brand-primary to-brand-accent text-white font-bold py-3.5 px-6 rounded-xl shadow-lg shadow-brand-primary/30 hover:shadow-brand-primary/50 transition-all hover:scale-[1.02]">
-                        Sign Up
+                    <!-- Plan Selection -->
+                    <div class="pt-4 border-t border-slate-200 dark:border-white/10">
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Choose Your Plan</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="plan" value="free" class="hidden peer" checked onchange="toggleCardForm()">
+                                <div class="peer-checked:ring-2 peer-checked:ring-brand-primary peer-checked:border-brand-primary p-4 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 transition-all hover:border-brand-primary/50">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="font-bold text-slate-900 dark:text-white">Free</span>
+                                        <span class="text-lg font-bold text-slate-900 dark:text-white">$0</span>
+                                    </div>
+                                    <ul class="text-xs text-slate-500 dark:text-slate-400 space-y-1">
+                                        <li>✓ 100 scans/day</li>
+                                        <li>✓ Text detection</li>
+                                    </ul>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="plan" value="pro" class="hidden peer" onchange="toggleCardForm()">
+                                <div class="peer-checked:ring-2 peer-checked:ring-brand-primary peer-checked:border-brand-primary p-4 rounded-xl border border-slate-200 dark:border-white/10 bg-gradient-to-br from-brand-primary/5 to-brand-accent/5 transition-all hover:border-brand-primary/50 relative overflow-hidden">
+                                    <span class="absolute top-0 right-0 bg-brand-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-bl">POPULAR</span>
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="font-bold text-slate-900 dark:text-white">Pro</span>
+                                        <span class="text-lg font-bold text-slate-900 dark:text-white">$29<span class="text-xs font-normal">/mo</span></span>
+                                    </div>
+                                    <ul class="text-xs text-slate-500 dark:text-slate-400 space-y-1">
+                                        <li>✓ 10,000 scans/day</li>
+                                        <li>✓ All features</li>
+                                    </ul>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Card Payment Section (hidden by default) -->
+                    <div id="card-section" class="hidden space-y-4 pt-4 border-t border-slate-200 dark:border-white/10">
+                        <div class="flex items-center gap-2 mb-2">
+                            <svg class="w-5 h-5 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                            </svg>
+                            <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Payment Information</span>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Cardholder Name</label>
+                            <input type="text" id="cardholder-name" placeholder="Name on card" class="input-field w-full px-4 py-3 rounded-xl text-slate-800 dark:text-white outline-none">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Card Details</label>
+                            <div id="card-element" class="input-field px-4 py-3 rounded-xl">
+                                <!-- Stripe Element -->
+                            </div>
+                            <div id="card-errors" class="text-red-500 text-sm mt-1" role="alert"></div>
+                        </div>
+                        
+                        <div class="flex items-center gap-2 text-xs text-slate-400">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                            </svg>
+                            <span>Secured by Stripe. Cancel anytime.</span>
+                        </div>
+                    </div>
+
+                    <!-- Hidden field for payment method -->
+                    <input type="hidden" name="payment_method" id="payment-method-input">
+                    
+                    <!-- Error Display -->
+                    <div id="payment-error" class="hidden p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm"></div>
+
+                    <button type="submit" id="submit-btn" class="w-full bg-gradient-to-r from-brand-primary to-brand-accent text-white font-bold py-3.5 px-6 rounded-xl shadow-lg shadow-brand-primary/30 hover:shadow-brand-primary/50 transition-all hover:scale-[1.02] flex items-center justify-center gap-2">
+                        <span id="btn-text">Sign Up</span>
+                        <svg id="btn-spinner" class="hidden w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
                     </button>
                 </form>
 
@@ -551,6 +626,121 @@
                 reader.readAsDataURL(input.files[0]);
             }
         }
+
+        // Toggle card form based on plan selection
+        function toggleCardForm() {
+            const cardSection = document.getElementById('card-section');
+            const proSelected = document.querySelector('input[name="plan"][value="pro"]').checked;
+            const btnText = document.getElementById('btn-text');
+            
+            if (proSelected) {
+                cardSection.classList.remove('hidden');
+                btnText.textContent = 'Sign Up & Pay $29';
+                initStripe();
+            } else {
+                cardSection.classList.add('hidden');
+                btnText.textContent = 'Sign Up';
+            }
+        }
+
+        // Stripe initialization
+        let stripe, elements, cardElement;
+        let stripeInitialized = false;
+
+        function initStripe() {
+            if (stripeInitialized) return;
+            
+            stripe = Stripe('{{ config("services.stripe.key") }}');
+            elements = stripe.elements();
+            
+            const style = {
+                base: {
+                    color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#1e293b',
+                    fontFamily: 'Inter, sans-serif',
+                    fontSize: '16px',
+                    '::placeholder': {
+                        color: document.documentElement.classList.contains('dark') ? '#64748b' : '#94a3b8'
+                    }
+                },
+                invalid: {
+                    color: '#ef4444',
+                    iconColor: '#ef4444'
+                }
+            };
+
+            cardElement = elements.create('card', { style: style });
+            cardElement.mount('#card-element');
+
+            cardElement.on('change', function(event) {
+                const displayError = document.getElementById('card-errors');
+                if (event.error) {
+                    displayError.textContent = event.error.message;
+                } else {
+                    displayError.textContent = '';
+                }
+            });
+
+            stripeInitialized = true;
+        }
+
+        // Form submission handling
+        document.querySelector('form').addEventListener('submit', async function(e) {
+            const proSelected = document.querySelector('input[name="plan"][value="pro"]').checked;
+            
+            if (!proSelected) {
+                // Free plan - normal form submission
+                return true;
+            }
+
+            // Pro plan - need to create payment method first
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submit-btn');
+            const btnText = document.getElementById('btn-text');
+            const btnSpinner = document.getElementById('btn-spinner');
+            const paymentError = document.getElementById('payment-error');
+            const cardholderName = document.getElementById('cardholder-name').value;
+
+            if (!cardholderName) {
+                paymentError.textContent = 'Please enter the cardholder name.';
+                paymentError.classList.remove('hidden');
+                return;
+            }
+
+            // Disable button and show spinner
+            submitBtn.disabled = true;
+            btnText.textContent = 'Processing...';
+            btnSpinner.classList.remove('hidden');
+            paymentError.classList.add('hidden');
+
+            try {
+                // Create payment method
+                const { paymentMethod, error } = await stripe.createPaymentMethod({
+                    type: 'card',
+                    card: cardElement,
+                    billing_details: {
+                        name: cardholderName
+                    }
+                });
+
+                if (error) {
+                    throw new Error(error.message);
+                }
+
+                // Set payment method in hidden field
+                document.getElementById('payment-method-input').value = paymentMethod.id;
+                
+                // Submit the form
+                this.submit();
+
+            } catch (error) {
+                paymentError.textContent = error.message;
+                paymentError.classList.remove('hidden');
+                submitBtn.disabled = false;
+                btnText.textContent = 'Sign Up & Pay $29';
+                btnSpinner.classList.add('hidden');
+            }
+        });
     </script>
 </body>
 </html>
