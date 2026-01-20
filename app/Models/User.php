@@ -7,11 +7,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Cashier\Billable;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, Billable;
 
     /**
      * The attributes that are mass assignable.
@@ -48,6 +49,52 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Check if user has Pro subscription
+     */
+    public function isPro(): bool
+    {
+        return $this->subscribed('default');
+    }
+
+    /**
+     * Get user's plan name
+     */
+    public function getPlanNameAttribute(): string
+    {
+        return $this->isPro() ? 'Pro' : 'Free';
+    }
+
+    /**
+     * Get daily scan limit based on plan
+     */
+    public function getDailyLimitAttribute(): int
+    {
+        return $this->isPro() ? 10000 : 100;
+    }
+
+    /**
+     * Check if user can perform more scans today
+     */
+    public function canScan(): bool
+    {
+        return $this->today_scans_count < $this->daily_limit;
+    }
+
+    /**
+     * Check if user can use a specific feature
+     */
+    public function canUseFeature(string $feature): bool
+    {
+        $proFeatures = ['image_detection', 'video_detection', 'humanizer', 'api_access'];
+        
+        if (in_array($feature, $proFeatures)) {
+            return $this->isPro();
+        }
+        
+        return true; // Free features
     }
 
     /**

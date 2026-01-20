@@ -31,6 +31,8 @@ class AuthController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'avatar' => ['nullable', 'file', 'max:2048'], // 2MB max (PHP limit)
+            'plan' => ['nullable', 'string', 'in:free,pro'],
+            'payment_method' => ['nullable', 'string'],
         ]);
 
         // Handle avatar upload
@@ -79,7 +81,46 @@ class AuthController extends Controller
             'avatar' => $avatarPath,
         ]);
 
-        // Create welcome notification
+        Auth::login($user);
+
+        // Handle Pro plan subscription
+        if ($request->plan === 'pro' && $request->payment_method) {
+            try {
+                $priceId = config('services.stripe.pro_price_id');
+                
+                if ($priceId && $priceId !== 'price_XXXXXX') {
+                    // Create Stripe customer and subscription
+                    $user->createOrGetStripeCustomer();
+                    $user->updateDefaultPaymentMethod($request->payment_method);
+                    $user->newSubscription('default', $priceId)->create($request->payment_method);
+                    
+                    // Create welcome notification for Pro user
+                    Notification::create([
+                        'user_id' => $user->id,
+                        'type' => 'billing',
+                        'title' => 'Welcome to TruthAI Pro! 🎉',
+                        'message' => 'Your Pro subscription is now active. Enjoy 10,000 scans/day, all detection types, and humanization!',
+                        'icon' => '💎',
+                        'link' => '/dashboard/billing',
+                    ]);
+
+                    return redirect()->route('dashboard')->with('success', 'Welcome to TruthAI Pro! Your subscription is active.');
+                }
+            } catch (\Exception $e) {
+                \Log::error('Pro subscription failed: ' . $e->getMessage());
+                // Continue with free account even if subscription fails
+                Notification::create([
+                    'user_id' => $user->id,
+                    'type' => 'billing',
+                    'title' => 'Subscription Issue',
+                    'message' => 'There was an issue processing your payment. Please try upgrading from the billing page.',
+                    'icon' => '⚠️',
+                    'link' => '/dashboard/billing',
+                ]);
+            }
+        }
+
+        // Create welcome notification for free user
         Notification::create([
             'user_id' => $user->id,
             'type' => 'system',
@@ -88,8 +129,6 @@ class AuthController extends Controller
             'icon' => '👋',
             'link' => '/dashboard/detector',
         ]);
-
-        Auth::login($user);
 
         return redirect()->route('dashboard');
     }
@@ -114,6 +153,12 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
+            
+            // Check if redirect to billing was requested
+            if ($request->get('redirect') === 'billing') {
+                return redirect()->route('billing');
+            }
+            
             return redirect()->intended(route('dashboard'));
         }
 

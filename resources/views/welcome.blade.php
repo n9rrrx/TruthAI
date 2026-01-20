@@ -686,7 +686,11 @@
                             <span class="text-slate-600 dark:text-slate-300">Basic support</span>
                         </li>
                     </ul>
-                    <button class="w-full py-3 rounded-xl border-2 border-slate-300 dark:border-white/20 text-slate-700 dark:text-slate-200 font-semibold hover:border-brand-primary transition-colors">Get Started</button>
+                    @auth
+                        <a href="/dashboard" class="block w-full py-3 rounded-xl border-2 border-slate-300 dark:border-white/20 text-slate-700 dark:text-slate-200 font-semibold hover:border-brand-primary transition-colors text-center">Go to Dashboard</a>
+                    @else
+                        <a href="/register" class="block w-full py-3 rounded-xl border-2 border-slate-300 dark:border-white/20 text-slate-700 dark:text-slate-200 font-semibold hover:border-brand-primary transition-colors text-center">Get Started</a>
+                    @endauth
                 </div>
 
                 <div class="glass-panel rounded-2xl p-8 hover:scale-105 transition-all border-2 border-brand-primary">
@@ -711,7 +715,11 @@
                             <span class="text-slate-600 dark:text-slate-300">API access</span>
                         </li>
                     </ul>
-                    <button class="w-full py-3 rounded-xl bg-brand-primary text-white font-semibold hover:opacity-90 transition-opacity">Upgrade to Pro</button>
+                    @auth
+                        <a href="/dashboard/billing/checkout" class="block w-full py-3 rounded-xl bg-brand-primary text-white font-semibold hover:opacity-90 transition-opacity text-center">Upgrade to Pro</a>
+                    @else
+                        <a href="/login?redirect=billing" class="block w-full py-3 rounded-xl bg-brand-primary text-white font-semibold hover:opacity-90 transition-opacity text-center">Upgrade to Pro</a>
+                    @endauth
                 </div>
 
                 <div class="glass-panel rounded-2xl p-8 hover:scale-105 transition-all">

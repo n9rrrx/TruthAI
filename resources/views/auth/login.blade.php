@@ -143,6 +143,9 @@
                 <!-- Form -->
                 <form method="POST" action="{{ route('login') }}" class="space-y-5">
                     @csrf
+                    @if(request('redirect'))
+                        <input type="hidden" name="redirect" value="{{ request('redirect') }}">
+                    @endif
                     
                     @if($errors->any())
                         <div class="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
