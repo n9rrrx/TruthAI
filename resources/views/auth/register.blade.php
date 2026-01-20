@@ -297,7 +297,7 @@
                     </div>
 
                     <!-- Plan Selection -->
-                    <div class="pt-4 border-t border-slate-200 dark:border-white/10">
+                    <div id="plan-section" class="pt-4 border-t border-slate-200 dark:border-white/10">
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Choose Your Plan</label>
                         <div class="grid grid-cols-2 gap-3">
                             <label class="cursor-pointer">
@@ -630,6 +630,7 @@
         // Toggle card form based on plan selection
         function toggleCardForm() {
             const cardSection = document.getElementById('card-section');
+            const planSection = document.getElementById('plan-section');
             const proSelected = document.querySelector('input[name="plan"][value="pro"]').checked;
             const btnText = document.getElementById('btn-text');
             
@@ -642,6 +643,23 @@
                 btnText.textContent = 'Sign Up';
             }
         }
+
+        // Auto-select plan based on URL parameter
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const planParam = urlParams.get('plan');
+            const planSection = document.getElementById('plan-section');
+            
+            if (planParam === 'free') {
+                // Free plan: hide the plan selector entirely
+                planSection.classList.add('hidden');
+                document.querySelector('input[name="plan"][value="free"]').checked = true;
+            } else if (planParam === 'pro') {
+                // Pro plan: show plan selector with Pro selected
+                document.querySelector('input[name="plan"][value="pro"]').checked = true;
+                toggleCardForm();
+            }
+        });
 
         // Stripe initialization
         let stripe, elements, cardElement;
