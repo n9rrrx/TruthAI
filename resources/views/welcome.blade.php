@@ -689,7 +689,7 @@
                     @auth
                         <a href="/dashboard" class="block w-full py-3 rounded-xl border-2 border-slate-300 dark:border-white/20 text-slate-700 dark:text-slate-200 font-semibold hover:border-brand-primary transition-colors text-center">Go to Dashboard</a>
                     @else
-                        <a href="/register" class="block w-full py-3 rounded-xl border-2 border-slate-300 dark:border-white/20 text-slate-700 dark:text-slate-200 font-semibold hover:border-brand-primary transition-colors text-center">Get Started</a>
+                        <a href="/register?plan=free" class="block w-full py-3 rounded-xl border-2 border-slate-300 dark:border-white/20 text-slate-700 dark:text-slate-200 font-semibold hover:border-brand-primary transition-colors text-center">Get Started</a>
                     @endauth
                 </div>
 
@@ -718,7 +718,7 @@
                     @auth
                         <a href="/dashboard/billing/checkout" class="block w-full py-3 rounded-xl bg-brand-primary text-white font-semibold hover:opacity-90 transition-opacity text-center">Upgrade to Pro</a>
                     @else
-                        <a href="/login?redirect=billing" class="block w-full py-3 rounded-xl bg-brand-primary text-white font-semibold hover:opacity-90 transition-opacity text-center">Upgrade to Pro</a>
+                        <a href="/register?plan=pro" class="block w-full py-3 rounded-xl bg-brand-primary text-white font-semibold hover:opacity-90 transition-opacity text-center">Upgrade to Pro</a>
                     @endauth
                 </div>
 
