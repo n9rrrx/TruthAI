@@ -4,19 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TruthAI | Premium AI Analytics</title>
-    
+
     <!-- Favicon & App Icons -->
     <link rel="icon" type="image/png" href="/images/favicon.png">
     <link rel="apple-touch-icon" href="/images/logo-icon.png">
     <meta name="theme-color" content="#00C0C2">
-    
+
     <!-- Open Graph / Social Media -->
     <meta property="og:title" content="TruthAI | Premium AI Analytics">
     <meta property="og:description" content="Detect AI generation with 99.2% accuracy. Humanize text to bypass filters.">
     <meta property="og:image" content="/images/logo-wordmark.png">
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary_large_image">
-    
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -349,7 +349,7 @@
         </nav>
     </header>
 
-    <main class="min-h-screen pt-32 pb-20 px-4 flex flex-col items-center justify-center relative z-10">
+    <main class="min-h-screen pt-40 pb-20 px-4 flex flex-col items-center justify-center relative z-10">
 
         <div class="text-center mb-12 max-w-2xl mx-auto space-y-4 reveal-up">
             <h1 class="text-4xl md:text-6xl font-bold tracking-tight">
@@ -528,7 +528,7 @@
                     </div>
                     <h3 class="text-2xl font-bold mb-3 text-slate-800 dark:text-white">Neural Analysis</h3>
                     <p class="text-slate-500 dark:text-slate-400 mb-6">Advanced linguistic profiling to detect patterns from GPT-4, Claude 3.5, and Gemini Ultra with 99.2% precision.</p>
-                    
+
                     <!-- Static Bar Chart -->
                     <div class="relative bg-slate-100 dark:bg-brand-dark/50 rounded-xl p-6 pb-4">
                         <!-- Live Indicator -->
@@ -536,7 +536,7 @@
                             <div class="w-1.5 h-1.5 rounded-full bg-brand-primary animate-pulse"></div>
                             <span class="text-[10px] font-bold text-brand-primary uppercase">LIVE</span>
                         </div>
-                        
+
                         <!-- Bar Chart - Static -->
                         <div class="flex items-end justify-between gap-6 h-28 mt-4 pt-2">
                             <div class="flex-1 flex flex-col items-center gap-2">
@@ -574,7 +574,7 @@
                     </div>
                     <h3 class="text-2xl font-bold mb-3 text-slate-800 dark:text-white">Synthetic Vision</h3>
                     <p class="text-slate-500 dark:text-slate-400 mb-4">Frame-by-frame forensics for deepfake video and AI-generated imagery. Detect latent space artifacts in Midjourney and Stable Diffusion.</p>
-                    
+
                     <!-- Real 3D Face with Three.js -->
                     <div class="relative mt-4 rounded-xl overflow-hidden bg-gradient-to-br from-brand-dark to-brand-darker h-56">
                         <!-- Three.js Canvas -->
@@ -606,7 +606,7 @@
                     </div>
                     <h3 class="text-lg font-bold mb-2 text-slate-800 dark:text-white">URL Shield</h3>
                     <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">Instant scanning of destination URLs for phishing or AI content farms.</p>
-                    
+
                     <!-- URL Scan Visual -->
                     <div class="bg-slate-100 dark:bg-brand-dark/50 rounded-lg p-3 overflow-hidden">
                         <div class="flex items-center gap-2 text-xs font-mono text-slate-500 dark:text-slate-400">
@@ -629,7 +629,7 @@
                     </div>
                     <h3 class="text-lg font-bold mb-2 text-slate-800 dark:text-white">Humanize AI</h3>
                     <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">Intelligently rewrite AI text while preserving meaning and bypassing detectors.</p>
-                    
+
                     <!-- Text Transformation Visual -->
                     <div class="bg-slate-100 dark:bg-brand-dark/50 rounded-lg p-3 space-y-2">
                         <div class="flex items-center gap-2">
@@ -644,7 +644,7 @@
                             <span class="text-xs text-white">I built this by...</span>
                         </div>
                     </div>
-                    
+
                     <!-- Authenticity Meter -->
                     <div class="mt-4 space-y-1">
                         <div class="flex justify-between text-xs">
@@ -816,7 +816,7 @@
                     <img src="/images/logo-icon.png" alt="TruthAI" class="w-8 h-8 rounded-lg">
                     <span class="font-bold text-xl text-slate-800 dark:text-white">TruthAI</span>
                 </div>
-                
+
                 <!-- Links -->
                 <div class="flex items-center gap-8 text-sm text-slate-500 dark:text-slate-400">
                     <a href="#" class="hover:text-brand-primary transition-colors">Privacy</a>
@@ -824,7 +824,7 @@
                     <a href="#" class="hover:text-brand-primary transition-colors">Forensics API</a>
                     <a href="#" class="hover:text-brand-primary transition-colors">Security</a>
                 </div>
-                
+
                 <!-- Status & Social -->
                 <div class="flex items-center gap-4">
                     <div class="flex items-center gap-3 text-slate-400 dark:text-slate-500">
@@ -837,7 +837,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="text-center text-xs text-slate-400 dark:text-slate-500 pt-6 border-t border-slate-200 dark:border-white/5">
                 © 2026 TruthAI .
             </div>
@@ -1021,10 +1021,10 @@
             const scene = new THREE.Scene();
             const camera = new THREE.PerspectiveCamera(50, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
             const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-            
+
             renderer.setSize(canvas.clientWidth, canvas.clientHeight);
             renderer.setPixelRatio(window.devicePixelRatio);
-            
+
             // Create wireframe head geometry (using a sphere as base)
             const headGeometry = new THREE.SphereGeometry(1.2, 24, 18);
             const wireframeMaterial = new THREE.MeshBasicMaterial({
@@ -1034,7 +1034,7 @@
                 opacity: 0.8
             });
             const head = new THREE.Mesh(headGeometry, wireframeMaterial);
-            
+
             // Create inner sphere for glow effect
             const innerGeometry = new THREE.SphereGeometry(1.15, 16, 12);
             const innerMaterial = new THREE.MeshBasicMaterial({
@@ -1044,7 +1044,7 @@
                 opacity: 0.3
             });
             const innerSphere = new THREE.Mesh(innerGeometry, innerMaterial);
-            
+
             // Create points at intersections for extra effect
             const pointsMaterial = new THREE.PointsMaterial({
                 color: 0x00C0C2,
@@ -1053,32 +1053,32 @@
                 opacity: 0.6
             });
             const points = new THREE.Points(headGeometry, pointsMaterial);
-            
+
             scene.add(head);
             scene.add(innerSphere);
             scene.add(points);
-            
+
             camera.position.z = 3;
-            
+
             // Animation loop
             function animate() {
                 requestAnimationFrame(animate);
-                
+
                 // Smooth rotation
                 head.rotation.y += 0.005;
                 head.rotation.x = Math.sin(Date.now() * 0.0005) * 0.1;
-                
+
                 innerSphere.rotation.y -= 0.003;
                 innerSphere.rotation.x = Math.sin(Date.now() * 0.0003) * 0.05;
-                
+
                 points.rotation.y = head.rotation.y;
                 points.rotation.x = head.rotation.x;
-                
+
                 renderer.render(scene, camera);
             }
-            
+
             animate();
-            
+
             // Handle resize
             window.addEventListener('resize', () => {
                 const width = canvas.clientWidth;
@@ -1091,4 +1091,4 @@
     </script>
 </body>
 </html>
- 
+
